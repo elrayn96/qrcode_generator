@@ -1,4 +1,5 @@
 # Registos de decisões arquitecturais
+
 | ID | Decisão aceite | Justificação |
 |---|---|---|
 | ADR-01 | Monorepo | Coordenação de contratos e versões |

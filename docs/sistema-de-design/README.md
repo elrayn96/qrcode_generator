@@ -1,4 +1,5 @@
 # Sistema de design - conceito B
+
 Identidade moderna e expressiva, violeta/índigo, superfícies suaves e cantos arredondados. Valores iniciais propostos, não paleta final aprovada.
 
 | Token | Claro | Escuro |
