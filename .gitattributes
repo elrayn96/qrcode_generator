@@ -1,0 +1,28 @@
+
+# Normalização dos finais de linha
+* text=auto eol=lf
+
+# Scripts Windows
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Imagens
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+
+# Fontes
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+
+# Ficheiros binários e arquivos
+*.jar binary
+*.zip binary
+*.pdf binary
+*.apk binary
+*.aab binary
