@@ -1,0 +1,186 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$defs:
+  ProjectInput:
+    type: object
+    additionalProperties: false
+    properties:
+      name: &id001
+        type: string
+        minLength: 1
+        maxLength: 100
+    required:
+    - name
+  Project:
+    type: object
+    additionalProperties: false
+    properties:
+      id: &id004
+        type: string
+        minLength: 1
+        maxLength: 128
+      name: *id001
+    required:
+    - id
+    - name
+  ApplicationInput:
+    type: object
+    additionalProperties: false
+    properties:
+      name: *id001
+      type:
+        type: string
+        enum:
+        - web
+        - android
+        - backend
+      restrictions: &id002
+        type: object
+        additionalProperties: false
+        properties:
+          origins:
+            type: array
+            items:
+              type: string
+              minLength: 1
+              maxLength: 512
+            maxItems: 100
+          ips:
+            type: array
+            items:
+              type: string
+              minLength: 1
+              maxLength: 64
+            maxItems: 100
+          packageName:
+            type: string
+            minLength: 1
+            maxLength: 256
+          certificateFingerprint:
+            type: string
+            minLength: 1
+            maxLength: 128
+      permissions: &id003
+        type: array
+        items:
+          type: string
+          enum:
+          - generate
+          - preview
+          - templates
+        maxItems: 100
+    required:
+    - name
+    - type
+  ApplicationPatch:
+    type: object
+    additionalProperties: false
+    properties:
+      name: *id001
+      restrictions: *id002
+      permissions: *id003
+      enabled:
+        type: boolean
+  Application:
+    type: object
+    additionalProperties: false
+    properties:
+      id: *id004
+      projectId: *id004
+      name: *id001
+      type:
+        type: string
+        enum:
+        - web
+        - android
+        - backend
+      enabled:
+        type: boolean
+      restrictions: *id002
+      permissions: *id003
+    required:
+    - id
+    - projectId
+    - name
+    - type
+    - enabled
+  KeyInput:
+    type: object
+    additionalProperties: false
+    properties:
+      name: *id001
+    required:
+    - name
+  Key:
+    type: object
+    additionalProperties: false
+    properties:
+      id: *id004
+      name: *id001
+      kind:
+        type: string
+        enum:
+        - public
+        - private
+      prefix:
+        type: string
+        minLength: 1
+        maxLength: 32
+      revoked:
+        type: boolean
+    required:
+    - id
+    - name
+    - kind
+    - prefix
+    - revoked
+  CreatedKey:
+    type: object
+    additionalProperties: false
+    properties:
+      id: *id004
+      key:
+        type: string
+        minLength: 1
+        maxLength: 256
+      kind:
+        type: string
+        enum:
+        - public
+        - private
+    required:
+    - id
+    - key
+    - kind
+  Usage:
+    type: object
+    additionalProperties: false
+    properties:
+      used:
+        type: integer
+        minimum: 0
+        maximum: 2147483647
+      limit:
+        type: integer
+        minimum: 0
+        maximum: 2147483647
+      resetAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+        format: date-time
+    required:
+    - used
+    - limit
+    - resetAt
+  Template:
+    type: object
+    additionalProperties: false
+    properties:
+      id: *id004
+      name: *id001
+      style:
+        $ref: personalizacao.yaml#/$defs/Style
+    required:
+    - id
+    - name
+    - style

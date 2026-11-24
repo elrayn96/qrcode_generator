@@ -1,0 +1,8 @@
+{
+  "type": "wifi",
+  "data": {
+    "ssid": "RedeExemplo",
+    "security": "WPA",
+    "password": "exemplo123"
+  }
+}

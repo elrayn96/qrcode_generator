@@ -1,0 +1,131 @@
+openapi: 3.1.0
+info:
+  title: GQR API interna
+  version: 0.1.0
+servers:
+- url: http://127.0.0.1:8001
+paths:
+  /healthz:
+    get:
+      operationId: engineHealth
+      summary: Estado do motor
+      security: []
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema: &id001
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    const: ok
+                  service:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                required:
+                - status
+  /readyz:
+    get:
+      operationId: engineReady
+      summary: Prontidão do motor
+      security: []
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema: *id001
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+  /internal/v1/render:
+    post:
+      operationId: render
+      summary: Renderizar conteúdo canónico; acesso exclusivo do Gateway
+      security: []
+      responses:
+        '200':
+          description: Imagem gerada; sem armazenamento.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            X-Request-ID:
+              schema:
+                type: string
+                minLength: 1
+                maxLength: 128
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '413':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '415':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '504':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: schemas/qr.yaml#/$defs/RenderRequest
