@@ -1,0 +1,10 @@
+apis:
+  publica:
+    root: packages/api-contracts/openapi-publica.yaml
+  interna:
+    root: packages/api-contracts/openapi-interna.yaml
+rules:
+  struct: error
+  no-unresolved-refs: error
+  operation-operationId-unique: error
+  operation-parameters-unique: error

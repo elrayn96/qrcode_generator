@@ -1,0 +1,59 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$defs:
+  Problem:
+    type: object
+    additionalProperties: false
+    properties:
+      type:
+        type: string
+        minLength: 1
+        maxLength: 256
+      title:
+        type: string
+        minLength: 1
+        maxLength: 256
+      status:
+        type: integer
+        minimum: 400
+        maximum: 599
+      detail:
+        type: string
+        minLength: 1
+        maxLength: 512
+      code:
+        type: string
+        minLength: 1
+        maxLength: 80
+      requestId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      errors:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            field:
+              type: string
+              minLength: 1
+              maxLength: 256
+            code:
+              type: string
+              minLength: 1
+              maxLength: 80
+            message:
+              type: string
+              minLength: 1
+              maxLength: 512
+          required:
+          - field
+          - code
+          - message
+        maxItems: 100
+    required:
+    - type
+    - title
+    - status
+    - code
+    - requestId

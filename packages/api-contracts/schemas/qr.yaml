@@ -1,0 +1,240 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$defs:
+  Request:
+    oneOf:
+    - type: object
+      additionalProperties: false
+      properties:
+        type:
+          const: url
+        data:
+          type: object
+          additionalProperties: false
+          properties:
+            url:
+              type: string
+              minLength: 1
+              maxLength: 2048
+              pattern: ^https?://[^\s]+$
+          required:
+          - url
+        output: &id001
+          $ref: personalizacao.yaml#/$defs/Output
+        options: &id002
+          $ref: personalizacao.yaml#/$defs/Options
+        style: &id003
+          $ref: personalizacao.yaml#/$defs/Style
+      required:
+      - type
+      - data
+    - type: object
+      additionalProperties: false
+      properties:
+        type:
+          const: text
+        data:
+          type: object
+          additionalProperties: false
+          properties:
+            text:
+              type: string
+              minLength: 1
+              maxLength: 2048
+          required:
+          - text
+        output: *id001
+        options: *id002
+        style: *id003
+      required:
+      - type
+      - data
+    - type: object
+      additionalProperties: false
+      properties:
+        type:
+          const: wifi
+        data:
+          type: object
+          additionalProperties: false
+          properties:
+            ssid:
+              type: string
+              minLength: 1
+              maxLength: 32
+            password:
+              type: string
+              minLength: 1
+              maxLength: 128
+            security:
+              type: string
+              enum:
+              - WPA
+              - WEP
+              - nopass
+            hidden:
+              type: boolean
+              default: false
+          required:
+          - ssid
+          - security
+          allOf:
+          - if:
+              properties:
+                security:
+                  const: nopass
+            then:
+              not:
+                required:
+                - password
+            else:
+              required:
+              - password
+        output: *id001
+        options: *id002
+        style: *id003
+      required:
+      - type
+      - data
+    - type: object
+      additionalProperties: false
+      properties:
+        type:
+          const: vcard
+        data:
+          type: object
+          additionalProperties: false
+          properties:
+            name:
+              type: string
+              minLength: 1
+              maxLength: 256
+            phone: &id004
+              type: string
+              minLength: 1
+              maxLength: 40
+            email:
+              type: string
+              minLength: 1
+              maxLength: 254
+              format: email
+            organization:
+              type: string
+              minLength: 1
+              maxLength: 256
+          required:
+          - name
+        output: *id001
+        options: *id002
+        style: *id003
+      required:
+      - type
+      - data
+    - type: object
+      additionalProperties: false
+      properties:
+        type:
+          const: email
+        data:
+          type: object
+          additionalProperties: false
+          properties:
+            address:
+              type: string
+              minLength: 1
+              maxLength: 254
+              format: email
+            subject:
+              type: string
+              minLength: 1
+              maxLength: 256
+            body:
+              type: string
+              minLength: 1
+              maxLength: 2048
+          required:
+          - address
+        output: *id001
+        options: *id002
+        style: *id003
+      required:
+      - type
+      - data
+    - type: object
+      additionalProperties: false
+      properties:
+        type:
+          const: sms
+        data:
+          type: object
+          additionalProperties: false
+          properties:
+            phone: *id004
+            message:
+              type: string
+              minLength: 1
+              maxLength: 1024
+          required:
+          - phone
+        output: *id001
+        options: *id002
+        style: *id003
+      required:
+      - type
+      - data
+    - type: object
+      additionalProperties: false
+      properties:
+        type:
+          const: phone
+        data:
+          type: object
+          additionalProperties: false
+          properties:
+            phone: *id004
+          required:
+          - phone
+        output: *id001
+        options: *id002
+        style: *id003
+      required:
+      - type
+      - data
+    - type: object
+      additionalProperties: false
+      properties:
+        type:
+          const: geo
+        data:
+          type: object
+          additionalProperties: false
+          properties:
+            latitude:
+              type: number
+              minimum: -90
+              maximum: 90
+            longitude:
+              type: number
+              minimum: -180
+              maximum: 180
+          required:
+          - latitude
+          - longitude
+        output: *id001
+        options: *id002
+        style: *id003
+      required:
+      - type
+      - data
+  RenderRequest:
+    type: object
+    additionalProperties: false
+    properties:
+      content:
+        type: string
+        minLength: 1
+        maxLength: 4096
+      output: *id001
+      options: *id002
+      style: *id003
+    required:
+    - content

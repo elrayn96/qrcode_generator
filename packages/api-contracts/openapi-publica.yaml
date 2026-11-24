@@ -1,0 +1,1402 @@
+openapi: 3.1.0
+info:
+  title: GQR API pública
+  version: 0.1.0
+servers:
+- url: http://127.0.0.1:8080
+paths:
+  /healthz:
+    get:
+      operationId: health
+      summary: Verificar estado
+      security: []
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    const: ok
+                  service:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                required:
+                - status
+  /v1/templates:
+    get:
+      operationId: listTemplates
+      summary: Listar modelos
+      security: []
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: schemas/administracao.yaml#/$defs/Template
+                maxItems: 100
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+  /v1/qr/generate:
+    post:
+      operationId: generate
+      summary: Gerar QR
+      security: &id001
+      - ApiKey: []
+      - {}
+      responses:
+        '200':
+          description: Imagem gerada; sem armazenamento.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            X-Request-ID:
+              schema:
+                type: string
+                minLength: 1
+                maxLength: 128
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '413':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '415':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '504':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: schemas/qr.yaml#/$defs/Request
+  /v1/qr/preview:
+    post:
+      operationId: preview
+      summary: Pré-visualizar QR (máximo 512 px)
+      security: *id001
+      responses:
+        '200':
+          description: Imagem gerada; sem armazenamento.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            X-Request-ID:
+              schema:
+                type: string
+                minLength: 1
+                maxLength: 128
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '413':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '415':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '504':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: schemas/qr.yaml#/$defs/Request
+  /v1/projects:
+    get:
+      operationId: listProjects
+      summary: Listar projectos próprios
+      security: &id002
+      - FirebaseToken: []
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: schemas/administracao.yaml#/$defs/Project
+                maxItems: 100
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+    post:
+      operationId: createProject
+      summary: Criar projecto
+      security: *id002
+      responses:
+        '201':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                $ref: schemas/administracao.yaml#/$defs/Project
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: schemas/administracao.yaml#/$defs/ProjectInput
+  /v1/projects/{id}:
+    get:
+      operationId: getProject
+      summary: Consultar recurso próprio
+      security: *id002
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                $ref: schemas/administracao.yaml#/$defs/Project
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: &id003
+        type: string
+        minLength: 1
+        maxLength: 128
+    patch:
+      operationId: patchProject
+      summary: Actualizar recurso próprio
+      security: *id002
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                $ref: schemas/administracao.yaml#/$defs/Project
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: schemas/administracao.yaml#/$defs/ProjectInput
+    delete:
+      operationId: deleteProject
+      summary: Desactivar recurso e revogar acesso
+      security: *id002
+      responses:
+        '204':
+          description: Sucesso
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+  /v1/applications/{id}:
+    get:
+      operationId: getApplication
+      summary: Consultar recurso próprio
+      security: *id002
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                $ref: schemas/administracao.yaml#/$defs/Application
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: *id003
+    patch:
+      operationId: patchApplication
+      summary: Actualizar recurso próprio
+      security: *id002
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                $ref: schemas/administracao.yaml#/$defs/Application
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: schemas/administracao.yaml#/$defs/ApplicationPatch
+    delete:
+      operationId: deleteApplication
+      summary: Desactivar recurso e revogar acesso
+      security: *id002
+      responses:
+        '204':
+          description: Sucesso
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+  /v1/projects/{id}/applications:
+    get:
+      operationId: listApps
+      summary: Listar aplicações próprias
+      security: *id002
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: schemas/administracao.yaml#/$defs/Application
+                maxItems: 100
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: *id003
+    post:
+      operationId: createApp
+      summary: Registar aplicação
+      security: *id002
+      responses:
+        '201':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                $ref: schemas/administracao.yaml#/$defs/Application
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: schemas/administracao.yaml#/$defs/ApplicationInput
+  /v1/applications/{id}/keys:
+    get:
+      operationId: listKeys
+      summary: Listar metadados sem segredos
+      security: *id002
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: schemas/administracao.yaml#/$defs/Key
+                maxItems: 100
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: *id003
+    post:
+      operationId: createKey
+      summary: Criar chave; segredo devolvido uma vez
+      security: *id002
+      responses:
+        '201':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                $ref: schemas/administracao.yaml#/$defs/CreatedKey
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: schemas/administracao.yaml#/$defs/KeyInput
+  /v1/keys/{id}:
+    delete:
+      operationId: revokeKey
+      summary: Revogar chave
+      security: *id002
+      responses:
+        '204':
+          description: Sucesso
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: *id003
+  /v1/applications/{id}/usage:
+    get:
+      operationId: getUsage
+      summary: Consultar quota própria
+      security: *id002
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                $ref: schemas/administracao.yaml#/$defs/Usage
+        '400':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '401':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '403':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '404':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '409':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '422':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '429':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+        '500':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+        '503':
+          description: Pedido rejeitado
+          content:
+            application/problem+json:
+              schema:
+                $ref: schemas/erro.yaml#/$defs/Problem
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 0
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: *id003
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    FirebaseToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
