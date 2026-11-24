@@ -1,10 +1,8 @@
 # Gen QR - GQR
 
-
 [![CI - Python](https://github.com/elrayn96/qrcode_generator/actions/workflows/validacao-python.yml/badge.svg?branch=main)](https://github.com/elrayn96/qrcode_generator/actions/workflows/validacao-python.yml)
 [![CI - Go](https://github.com/elrayn96/qrcode_generator/actions/workflows/validacao-go.yml/badge.svg?branch=main)](https://github.com/elrayn96/qrcode_generator/actions/workflows/validacao-go.yml)
 [![CI - Docs](https://github.com/elrayn96/qrcode_generator/actions/workflows/validacao-documentacao.yml/badge.svg?branch=main)](https://github.com/elrayn96/qrcode_generator/actions/workflows/validacao-documentacao.yml)
-
 
 > Geração e personalização gratuita de códigos QR estáticos, sem redireccionamentos proprietários.
 
