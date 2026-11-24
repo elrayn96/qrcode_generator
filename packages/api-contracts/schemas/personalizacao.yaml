@@ -1,0 +1,145 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$defs:
+  Style:
+    type: object
+    additionalProperties: false
+    properties:
+      modules: &id002
+        type: object
+        additionalProperties: false
+        properties:
+          shape:
+            type: string
+            enum:
+            - square
+            - rounded
+            - dots
+          color: &id001
+            type: string
+            pattern: ^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$
+          gradient: &id003
+            type: object
+            additionalProperties: false
+            properties:
+              type:
+                type: string
+                enum:
+                - linear
+                - radial
+              angle:
+                type: integer
+                minimum: 0
+                maximum: 360
+              stops:
+                type: array
+                minItems: 2
+                maxItems: 8
+                items:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                    position:
+                      type: number
+                      minimum: 0
+                      maximum: 1
+                    color: *id001
+                  required:
+                  - position
+                  - color
+            required:
+            - type
+            - stops
+        not:
+          required:
+          - color
+          - gradient
+      eyes:
+        type: object
+        additionalProperties: false
+        properties:
+          outer: *id002
+          inner: *id002
+      background:
+        type: object
+        additionalProperties: false
+        properties:
+          color: *id001
+          gradient: *id003
+          transparent:
+            type: boolean
+      logo:
+        type: object
+        additionalProperties: false
+        properties:
+          mediaType:
+            type: string
+            enum:
+            - image/png
+            - image/jpeg
+          base64:
+            type: string
+            minLength: 1
+            maxLength: 699052
+            pattern: ^[A-Za-z0-9+/]+={0,2}$
+          scale:
+            type: number
+            minimum: 0.05
+            maximum: 0.2
+          padding:
+            type: integer
+            minimum: 0
+            maximum: 4
+        required:
+        - mediaType
+        - base64
+      frame:
+        type: object
+        additionalProperties: false
+        properties:
+          color: *id001
+          label:
+            type: string
+            minLength: 1
+            maxLength: 80
+          position:
+            type: string
+            enum:
+            - top
+            - bottom
+          textColor: *id001
+          padding:
+            type: integer
+            minimum: 0
+            maximum: 16
+  Output:
+    type: object
+    additionalProperties: false
+    properties:
+      format:
+        type: string
+        enum:
+        - png
+        - svg
+        default: png
+      size:
+        type: integer
+        minimum: 128
+        maximum: 2048
+        default: 512
+      margin:
+        type: integer
+        minimum: 4
+        maximum: 32
+        default: 4
+  Options:
+    type: object
+    additionalProperties: false
+    properties:
+      errorCorrection:
+        type: string
+        enum:
+        - L
+        - M
+        - Q
+        - H
+        default: M
