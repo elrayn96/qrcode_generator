@@ -1,0 +1,72 @@
+
+name: CI - Documentacao
+
+on:
+  push:
+    paths:
+      - "**/*.md"
+      - "LICENSE"
+      - ".markdownlint-cli2.yaml"
+      - ".github/workflows/validacao-documentacao.yml"
+
+  pull_request:
+    branches: [main]
+    paths:
+      - "**/*.md"
+      - "LICENSE"
+      - ".markdownlint-cli2.yaml"
+      - ".github/workflows/validacao-documentacao.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-documentacao-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validacao:
+    name: Validar documentação
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Obter código-fonte
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Verificar ficheiros obrigatórios
+        shell: bash
+        run: |
+          ficheiros=(
+            "README.md"
+            "LICENSE"
+            "docs/README.md"
+            "docs/requisitos.md"
+            "docs/arquitectura.md"
+            "docs/seguranca.md"
+            "docs/testes.md"
+            "docs/ci-cd.md"
+            "docs/roadmap.md"
+            "docs/api/README.md"
+          )
+
+          for ficheiro in "${ficheiros[@]}"; do
+            if [ ! -s "$ficheiro" ]; then
+              echo "Ficheiro inexistente ou vazio: $ficheiro"
+              exit 1
+            fi
+
+            echo "Validado: $ficheiro"
+          done
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Validar Markdown
+        run: npx --yes markdownlint-cli2@0.18.1

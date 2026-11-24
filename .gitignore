@@ -178,3 +178,7 @@ test-results/
 
 /docs/_build/
 /site/
+
+
+# Relatórios de integração contínua
+/services/qr-engine/resultados-testes.xml

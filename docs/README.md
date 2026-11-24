@@ -1,4 +1,5 @@
 # Gen QR - GQR
+
 Baseline documental v0.1, proposta para revisão.
 
 - [requisitos.md](requisitos.md)

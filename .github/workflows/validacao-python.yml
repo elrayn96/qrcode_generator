@@ -1,0 +1,81 @@
+
+name: CI - Python
+
+on:
+  push:
+    paths:
+      - "services/qr-engine/**"
+      - "packages/api-contracts/**"
+      - ".github/workflows/validacao-python.yml"
+      - ".editorconfig"
+      - ".gitattributes"
+
+  pull_request:
+    branches: [main]
+    paths:
+      - "services/qr-engine/**"
+      - "packages/api-contracts/**"
+      - ".github/workflows/validacao-python.yml"
+      - ".editorconfig"
+      - ".gitattributes"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-python-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validacao:
+    name: Validar QR Engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: services/qr-engine
+
+    steps:
+      - name: Obter código-fonte
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.15.2"
+          cache: pip
+          cache-dependency-path: |
+            services/qr-engine/requirements*.txt
+
+      - name: Verificar versão Python
+        run: python --version
+
+      - name: Instalar dependências
+        run: |
+          python -m pip install --only-binary=:all: -r requirements-dev.txt -c requirements-lock.txt
+
+      - name: Verificar dependências
+        run: python -m pip check
+
+      - name: Executar análise estática
+        run: python -m ruff check .
+
+      - name: Verificar formatação
+        run: python -m ruff format --check .
+
+      - name: Executar testes automatizados
+        run: python -m pytest -v --junitxml=resultados-testes.xml
+
+      - name: Publicar resultados dos testes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-testes-python
+          path: services/qr-engine/resultados-testes.xml
+          retention-days: 7
+          if-no-files-found: ignore

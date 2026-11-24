@@ -1,4 +1,5 @@
 # Gestão de configuração
+
 Monorepo elrayn96/qrcode_generator. main estável, branches temporárias por funcionalidade, PR e validação antes de integrar. Nomes e mensagens em português, sem acentos em branches; prefixos Conventional Commits mantidos por convenção técnica. Commits atómicos, sem misturar refactor e funcionalidade. Exemplos: docs/documentacao-inicial; chore/estrutura-monorepo; feat/contratos-api; feat/motor-geracao-qr; feat/gateway-api. Mensagem: docs: definir requisitos e critérios de aceitação.
 
 Versionar contratos, configurações de exemplo e dependências fixadas. Não versionar .env, credenciais Firebase, caches ou binários locais. SemVer para releases, API /v1. Alterações arquitecturais por ADR; evitar reescrever histórico partilhado. Rever conflitos entre branches paralelas; contratos partilhados têm responsável explícito. README actualizado após cada marco.
