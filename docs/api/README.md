@@ -1,4 +1,5 @@
 # API REST v1
+
 Contratos propostos; não implementados. JSON para pedidos, PNG/SVG binário para respostas. Erros JSON com code, message e requestId; mensagens localizadas no cliente. Cabeçalho X-API-Key para aplicações, Authorization: Bearer para administração.
 
 | Método | Caminho | Acesso |

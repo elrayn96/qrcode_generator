@@ -1,0 +1,103 @@
+
+name: CI - Go
+
+on:
+  push:
+    paths:
+      - "services/api-gateway/**"
+      - "packages/api-contracts/**"
+      - ".github/workflows/validacao-go.yml"
+      - ".editorconfig"
+      - ".gitattributes"
+
+  pull_request:
+    branches: [main]
+    paths:
+      - "services/api-gateway/**"
+      - "packages/api-contracts/**"
+      - ".github/workflows/validacao-go.yml"
+      - ".editorconfig"
+      - ".gitattributes"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-go-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validacao:
+    name: Validar API Gateway
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: services/api-gateway
+
+    steps:
+      - name: Obter código-fonte
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Configurar Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: services/api-gateway/go.mod
+          cache: true
+          cache-dependency-path: |
+            services/api-gateway/go.mod
+            services/api-gateway/go.sum
+
+      - name: Verificar versão Go
+        run: go version
+
+      - name: Verificar dependências
+        run: go mod verify
+
+      - name: Verificar consistência do módulo
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+          test -z "$(git ls-files --others --exclude-standard -- go.mod go.sum)"
+
+      - name: Verificar formatação
+        run: |
+          ficheiros=$(gofmt -l .)
+
+          if [ -n "$ficheiros" ]; then
+            echo "Ficheiros com formatação incorrecta:"
+            echo "$ficheiros"
+            exit 1
+          fi
+
+      - name: Executar análise estática
+        run: go vet ./...
+
+      - name: Executar testes automatizados
+        run: go test -v -count=1 ./...
+
+      - name: Detectar condições de corrida
+        run: go test -race -count=1 ./...
+
+      - name: Gerar relatório de cobertura
+        run: go test -coverprofile=coverage.out ./...
+
+      - name: Apresentar cobertura
+        run: go tool cover -func=coverage.out
+
+      - name: Compilar aplicação
+        run: go build -o bin/gateway ./cmd/gateway
+
+      - name: Publicar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-testes-go
+          path: services/api-gateway/coverage.out
+          retention-days: 7
+          if-no-files-found: ignore

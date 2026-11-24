@@ -1,4 +1,5 @@
 # Plano de testes
+
 | Área | Verificação | Ferramenta |
 |---|---|---|
 | Python | matriz, exportação, estilo, validação limites | pytest |

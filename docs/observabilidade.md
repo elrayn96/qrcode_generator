@@ -1,2 +1,3 @@
 # Observabilidade
+
 Logs estruturados com requestId, rota, duração, status, tamanho e identificador não secreto da aplicação. Sem corpo, query sensível, tokens, IP bruto em logs de rotina ou imagens. Métricas: pedidos, erros, latência p50/p95, fila, workers ocupados, cache hits, quotas e rejeições. Health check distingue processo activo de dependências prontas; detalhes internos não públicos. Retenção local limitada e configurável; sem plataforma externa obrigatória. Usar métricas para ajustar capacidade, não números arbitrários.

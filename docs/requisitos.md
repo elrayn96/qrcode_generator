@@ -1,10 +1,13 @@
 # Especificação de requisitos - GQR
+
 Estado: baseline proposta para revisão | v0.1
 
 ## Objectivo e âmbito
+
 Gerar códigos QR estáticos gratuitamente, sem redireccionamento proprietário, através de website, Android e API REST. O portal permite gerir integrações externas. O alojamento público não constitui condição de conclusão.
 
 ## Requisitos funcionais
+
 | ID | Requisito | Critério de aceitação |
 |---|---|---|
 | RF01 | Codificar URL, texto, Wi-Fi, contacto vCard, email, SMS, telefone e localização | Descodificação reproduz o conteúdo esperado; URL aponta directamente ao destino |
@@ -21,7 +24,9 @@ Gerar códigos QR estáticos gratuitamente, sem redireccionamento proprietário,
 | RF12 | Selector de cores | HEX, RGB, HSV e selecção por arrasto reflectem pré-visualização |
 
 ## Requisitos não funcionais
+
 RNF01: interface em português com catálogos de tradução, sem textos fixos nos componentes. RNF02: acessibilidade WCAG 2.2 AA como referência web; escala de texto Android e TalkBack. RNF03: nenhuma persistência de conteúdo QR no servidor, incluindo logs. RNF04: limites de tamanho, tempo, fila e concorrência configuráveis. RNF05: instalação reproduzível e desenvolvimento offline após preparação, excepto serviços remotos. RNF06: testes automatizados e CI GitHub Actions. RNF07: serviço Python não exposto externamente. RNF08: sem cobrança pelo uso do produto; quotas para proteger recursos.
 
 ## Fora do MVP
+
 QR dinâmico, redireccionamento, sincronização de histórico, SDK próprio, gRPC, alojamento público obrigatório, Docker e atestação completa. Leitura QR pelo utilizador e exportação PDF ficam para avaliação posterior.
