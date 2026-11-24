@@ -5,6 +5,7 @@ import uvicorn
 from fastapi import FastAPI
 
 from src.api.rotas import router
+from src.api.tratamento_erros import registar_tratamento_erros
 from src.core.config import carregar_configuracao
 
 
@@ -35,6 +36,7 @@ def criar_aplicacao() -> FastAPI:
     aplicacao.state.config = config
     aplicacao.state.pronto = False
     aplicacao.include_router(router)
+    registar_tratamento_erros(aplicacao)
 
     return aplicacao
 
