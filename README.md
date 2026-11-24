@@ -1,55 +1,90 @@
-# QR Code Generator
+# Gen QR - GQR
 
-> Plataforma gratuita de geração e personalização de códigos QR estáticos.
+> Geração e personalização gratuita de códigos QR estáticos, sem redireccionamentos proprietários.
 
-**Estado:** Planeamento inicial — pré-MVP. Este documento é provisório e será actualizado durante o desenvolvimento. Nenhum endpoint ou serviço descrito está ainda disponível.
+**Estado:** pré-MVP - arquitectura definida; documentação v0.1 publicada para revisão. A implementação, os serviços executáveis e os contratos OpenAPI completos ainda estão pendentes.
 
-## Visão
+## Visão e objectivos
 
-Disponibilizar um website, uma aplicação Android e uma API pública gratuita para gerar códigos QR personalizados. Os códigos incorporam directamente o conteúdo original, sem redireccionamentos proprietários, marcas de água ou expiração imposta pela plataforma. A validade de um URL depende do destino original, e o conteúdo de um código estático não pode ser alterado após a geração.
+O GQR é um projecto pessoal de engenharia de software que reúne um website, uma aplicação Android, um portal de programadores e uma API REST pública. Pretende proporcionar uma experiência de criação de códigos QR simples, moderna e acessível, ao mesmo tempo que permite aprofundar conhecimentos de arquitectura, concorrência em Go, segurança de APIs, desenvolvimento multiplataforma e integração contínua.
 
-## Funcionalidades previstas
+Os códigos incorporam directamente o conteúdo original, sem marcas de água nem expiração imposta pelo GQR. A disponibilidade de um URL depende do destino original. Alterar o conteúdo exige gerar um novo código. O alojamento público não é obrigatório para a conclusão do projecto.
 
-- [ ] URL, texto, Wi-Fi, vCard, email, SMS, telefone, WhatsApp e localização.
-- [ ] Cores sólidas, gradientes, fundo transparente, formas dos módulos e dos olhos.
-- [ ] Logótipos, molduras, legendas, margens e templates editáveis.
-- [ ] Pré-visualização no servidor e exportação PNG e SVG.
-- [ ] Validação de legibilidade e correspondência com o conteúdo original.
-- [ ] Histórico local e partilha na aplicação Android.
-- [ ] Portal de programadores, gestão de aplicações e credenciais.
-- [ ] API REST versionada e documentação OpenAPI.
+## Funcionalidades previstas (MVP)
 
-Fases posteriores: PDF, eventos de calendário, geração em lote e leitura de códigos QR.
+- [ ] URL, texto, Wi-Fi, contactos vCard, email, SMS, telefone e localização.
+- [ ] Personalização de módulos, olhos, fundo, cores sólidas, gradientes e logótipos.
+- [ ] Selector visual de cores por arrasto, HEX, RGB e HSV, com pré-visualização.
+- [ ] Modelos reutilizáveis, margens e preservação dos padrões funcionais do QR.
+- [ ] Exportação PNG e SVG e validação por descodificação independente.
+- [ ] Histórico local, edição e eliminação sem conta obrigatória.
+- [ ] Temas claro, escuro e automático, independentes das cores do QR.
+- [ ] Portal com login Google, registo de aplicações, gestão de credenciais, permissões e utilização.
+- [ ] API REST versionada, gratuita, sujeita a quotas e limites de frequência.
 
-## Arquitectura proposta
+QR dinâmico, sincronização do histórico, SDKs, gRPC, atestação completa, Docker, leitura QR pelo utilizador e PDF não fazem parte do MVP inicial.
+
+## Arquitectura
 
 ```mermaid
 flowchart TD
-    W[Website] --> G[Go API Gateway]
+    W[Website] --> G[Gateway Go]
     A[Android] --> G
-    D[Portal de programadores] --> G
     E[Clientes externos] --> G
+    D[Portal de programadores] --> G
     D --> F[Firebase Authentication]
     G --> F
     G --> DB[Cloud Firestore]
-    G --> P[Python QR Engine privado]
-    P --> G
+    G -->|REST interno| P[Motor QR Python privado]
 ```
 
-A geração ocorre exclusivamente no servidor. Go gere a API pública, autorização, quotas, concorrência e comunicação com o motor Python. Python gere codificação, desenho, exportação e validação dos QR Codes. O motor Python não será directamente exposto à Internet. A comunicação interna HTTP é uma proposta inicial.
+O gateway é a única entrada da API. O motor Python recebe pedidos internos e gera as imagens; não fica directamente exposto aos consumidores. A geração é centralizada no servidor, mas o histórico e as preferências permanecem no dispositivo. O Firebase guarda identidade e metadados, nunca os conteúdos dos códigos gerados.
 
-### Tecnologias
-
-| Componente | Tecnologia / situação |
+| Componente | Tecnologia definida |
 |---|---|
-| Gateway | Go, biblioteca net/http (proposta) |
-| Motor QR | Python, FastAPI e bibliotecas de QR/imagem a validar |
-| Identidade | Firebase Authentication — Google |
-| Persistência | Cloud Firestore |
-| Website e portal | Framework por decidir |
-| Android | Tecnologia por decidir |
-| Contratos | REST, JSON, OpenAPI |
-| Infraestrutura | Docker e GitHub Actions (proposta) |
+| Website e portal | HTML5, CSS3 e JavaScript puro (ES Modules) |
+| Android | Kotlin, Jetpack Compose, Material 3 |
+| Gateway | Go, net/http, sem framework externo de routing |
+| Motor QR | Python, FastAPI, Uvicorn, Segno, Pillow |
+| SVG | Biblioteca padrão Python |
+| Identidade | Firebase Authentication com Google |
+| Persistência | Cloud Firestore; IndexedDB no website; armazenamento privado no Android |
+| Comunicação | REST, HTTP/JSON, OpenAPI |
+| CI/CD | GitHub Actions |
+
+O descodificador independente de QR ainda será seleccionado. Docker e alojamento ficam para avaliação posterior.
+
+## API e segurança
+
+A API pública terá versão inicial `/v1`. Os contratos e exemplos executáveis serão definidos na fase de especificação OpenAPI; consultar [API](docs/api/README.md). Não existe ainda um endpoint público disponível.
+
+| Cliente | Modelo de acesso previsto |
+|---|---|
+| Website e Android oficiais | Sem login obrigatório; identificação pública e limites anónimos |
+| Website externo | Chave pública `qr_pk_`, origens autorizadas, permissões e quotas |
+| Android externo | Chave pública e identificação declarada; não constitui atestação |
+| Backend externo | Chave privada `qr_sk_`, permissões e restrição opcional de IP |
+| Portal | Firebase ID Token e autorização por propriedade |
+
+Chaves públicas identificam aplicações, mas não comprovam a origem de pedidos fora do navegador. CORS não substitui autenticação. Chaves privadas nunca serão incorporadas em JavaScript ou APK; serão armazenadas mediante hash seguro ou HMAC e apresentadas uma única vez na criação. Operações administrativas exigem autenticação do programador.
+
+HTTPS será obrigatório fora do ambiente local isolado. Serão aplicados limites de entradas, imagens e resolução; validação de ficheiros enviados; protecção contra SSRF; revogação de credenciais e logs sem segredos ou conteúdos QR. Não serão persistidos conteúdos QR ou logótipos no servidor.
+
+## Concorrência e gestão de recursos
+
+Go gere pedidos simultâneos com goroutines, channels, worker pool limitado, cancelamento por context e encerramento controlado. A fila limitada evita saturação do motor Python. A cache em memória terá capacidade limitada, TTL e invalidação na alteração ou revogação de credenciais. O algoritmo Token Bucket limita frequência; quotas diárias persistentes no Firestore serão reservadas atomicamente.
+
+Parâmetros iniciais propostos: 2 workers, fila de 8 pedidos, timeout total de 15 segundos e TTL de 60 segundos. São valores configuráveis, sujeitos a testes de carga. A arquitectura inicial assume uma instância do gateway; fila cheia retorna 503 e limites de utilização retornam 429.
+
+## Experiência de utilização e internacionalização
+
+A identidade visual segue o conceito B: índigo e violeta, componentes arredondados, gradientes moderados e suporte aos temas claro, escuro e automático. A paleta definitiva será formalizada no sistema de design.
+
+A Lei de Jakob orienta a navegação: padrões familiares, barra inferior Android, acção de criação destacada, gestos horizontais entre abas relacionadas e actualização por arrasto quando aplicável. Os gestos têm alternativas visíveis e não devem interferir com a navegação nativa.
+
+A acessibilidade toma WCAG 2.2 AA como referência web: contraste, textos legíveis e escaláveis, alvos de toque adequados, navegação por teclado, suporte a leitores de ecrã e movimento reduzido. As cores do QR são independentes do tema da interface; contraste visual não substitui testes de descodificação.
+
+O Português é o idioma inicial. Textos de interface ficam em catálogos de tradução; identificadores técnicos e códigos de erro permanecem estáveis. Recursos visuais locais evitam dependências desnecessárias de CDNs.
 
 ## Estrutura prevista do monorepo
 
@@ -57,143 +92,84 @@ A geração ocorre exclusivamente no servidor. Go gere a API pública, autoriza�
 qrcode_generator/
 ├── apps/
 │   ├── web/
-│   ├── developers/
-│   ├── android/
-│   └── api/              # Gateway Go
+│   ├── developer-portal/
+│   └── android/
+├── services/
+│   ├── api-gateway/
+│   └── qr-engine/
 ├── packages/
-│   ├── qr-engine/        # Serviço Python
-│   ├── shared/           # Contratos e schemas
-│   └── api-client/
-├── tests/               # Integração e end-to-end
+│   ├── design-tokens/
+│   └── api-contracts/
+├── firebase/
 ├── docs/
-│   ├── architecture/
-│   ├── api/
-│   └── requirements/
-├── infrastructure/
-│   └── docker/
+├── tests/
+│   ├── integration/
+│   ├── e2e/
+│   └── performance/
 ├── .github/workflows/
 ├── .gitignore
 ├── LICENSE
 └── README.md
 ```
 
-Esta estrutura é planeada; os directórios serão criados nas branches respectivas.
+Estrutura-alvo, não inventário dos directórios existentes. Será implementada incrementalmente, preservando a estrutura já criada quando compatível.
 
-## API pública
+## Documentação técnica
 
-Gratuita, documentada e acessível a programadores registados. O website público não exigirá conta. A aplicação oficial e o website usarão mecanismos próprios de protecção contra abuso, a definir. Endpoints propostos:
-
-| Método | Endpoint | Finalidade |
-|---|---|---|
-| POST | `/api/v1/qr/generate` | Gerar imagem |
-| POST | `/api/v1/qr/preview` | Pré-visualizar |
-| POST | `/api/v1/qr/validate` | Validar imagem e conteúdo |
-| GET | `/api/v1/types` | Tipos suportados |
-| GET | `/api/v1/styles` | Estilos |
-| GET | `/api/v1/formats` | Formatos |
-| GET | `/api/v1/templates` | Templates |
-| GET | `/api/v1/health` | Disponibilidade |
-| GET/POST | `/api/v1/developer/apps` | Listar/criar aplicações |
-| PATCH/DELETE | `/api/v1/developer/apps/{id}` | Actualizar/remover aplicação |
-| POST | `/api/v1/developer/apps/{id}/keys` | Emitir credencial |
-| DELETE | `/api/v1/developer/apps/{id}/keys/{keyId}` | Revogar credencial |
-
-Exemplo conceptual, não executável enquanto a API não estiver publicada:
-
-```http
-POST /api/v1/qr/generate
-Authorization: Bearer <API_KEY>
-Content-Type: application/json
-```
-
-```json
-{
-  "type": "url",
-  "content": "https://example.com",
-  "format": "png",
-  "size": 1024,
-  "style": {
-    "foreground": "#111827",
-    "background": "#FFFFFF",
-    "moduleShape": "rounded"
-  },
-  "errorCorrection": "H"
-}
-```
-
-Resposta: imagem binária com Content-Type apropriado. Erros JSON estruturados com código estável e identificador do pedido. Estados previstos: 400, 401, 403, 413, 415, 422, 429, 500 e 503.
-
-## Portal de programadores
-
-Domínios ilustrativos: `qrcodegen.com`, `api.qrcodegen.com` e `devs.qrcodegen.com`. Disponibilidade e aquisição não confirmadas.
-
-O programador inicia sessão com Google, regista uma aplicação, configura origens autorizadas, cria/roda/revoga credenciais e consulta utilização e quotas. O gateway valida o Firebase ID token nas operações de gestão, incluindo a propriedade da aplicação. Para consumo server-to-server, usa credenciais próprias e, opcionalmente, IPs permitidos. Para clientes web, CORS e allowlist de origens complementam a autenticação; não comprovam a identidade do cliente, pois Origin pode ser falsificado fora do navegador. Segredos de servidor nunca devem ser incorporados em JavaScript ou APKs. Integrações directas de browser/mobile exigirão um modelo específico de tokens temporários ou atestação, ainda por definir.
-
-### Firestore — modelo conceptual
-
-- `developers`: UID, perfil mínimo, timestamps.
-- `applications`: proprietário, nome, tipo, origens/IPs permitidos, estado.
-- `api_keys`: identificador, aplicação, hash seguro da credencial, validade, estado.
-- `usage`: contadores agregados por aplicação e período.
-
-Credenciais aleatórias de elevada entropia, apresentadas uma única vez e armazenadas apenas como hash/HMAC. Regras de acesso restritivas; operações privilegiadas pelo backend com IAM e validação de propriedade. Não guardar conteúdo de QR Codes ou logótipos após processamento.
-
-## Segurança e concorrência
-
-- HTTPS, validação de pedidos, limites de tamanho/resolução, rate limiting e quotas.
-- CORS com origens exactas (esquema, host e porta); nunca usar CORS como autenticação.
-- Goroutines, worker pools limitados, channels, context cancellation, timeouts e graceful shutdown.
-- Backpressure no gateway e limites no motor Python; sem fila ilimitada.
-- Logs sem credenciais, tokens, conteúdo de QR Codes ou palavras-passe Wi-Fi.
-- Uploads de logótipos validados; sem download de URLs arbitrários.
-- Zona livre mínima de quatro módulos, contraste e descodificação de teste antes da exportação.
-
-## Internacionalização
-
-Português como idioma inicial. Textos de interface em catálogos de tradução, por exemplo `locales/pt.json` e futuramente `locales/en.json`. Usar chaves estáveis, interpolação e formatação dependente do locale; evitar textos fixos em componentes. Identificadores de código, contratos e códigos de erro independentes do idioma. O conteúdo fornecido pelo utilizador nunca será traduzido automaticamente.
-
-## Preparação do ambiente
-
-Actualmente não existe uma implementação executável. Clonar o repositório:
-
-```bash
-git clone https://github.com/elrayn96/qrcode_generator.git
-cd qrcode_generator
-```
-
-Pré-requisitos previstos: Git, Go, Python, Docker (opcional durante desenvolvimento) e projecto Firebase. Versões e comandos de instalação/execução serão documentados quando os módulos forem implementados. Credenciais privadas deverão estar em variáveis de ambiente ou secret managers, nunca no Git; disponibilizar exemplos sem segredos.
-
-## Desenvolvimento e controlo de versões
-
-`main` representa a linha estável. Criar branches curtas a partir de main para cada alteração, realizar commits atómicos, abrir pull requests, executar testes e integrar após revisão. Não usar uma branch permanente por aplicação.
-
-| Prefixo | Exemplo |
+| Documento | Conteúdo |
 |---|---|
-| docs/ | `docs/initial-project-readme` |
-| chore/ | `chore/monorepo-bootstrap` |
-| feat/ | `feat/go-api-gateway` |
-| fix/ | `fix/qr-logo-validation` |
-| test/ | `test/gateway-concurrency` |
-| refactor/ | `refactor/qr-renderer` |
+| [Índice](docs/README.md) | Organização documental |
+| [Requisitos](docs/requisitos.md) | Âmbito e critérios de aceitação |
+| [Arquitectura](docs/arquitectura.md) | Componentes e comunicação |
+| [Modelo de dados](docs/modelo-de-dados.md) | Firebase e armazenamento local |
+| [Segurança](docs/seguranca.md) | Identidade, acesso e privacidade |
+| [Concorrência](docs/concorrencia.md) | Filas, cache e quotas |
+| [API](docs/api/README.md) | Contratos previstos |
+| [UI/UX](docs/ui-ux/directrizes.md) | Navegação e acessibilidade |
+| [Sistema de design](docs/sistema-de-design/README.md) | Identidade visual |
+| [Testes](docs/testes.md) | Estratégia de validação |
+| [CI/CD](docs/ci-cd.md) | Pipelines GitHub Actions |
+| [Observabilidade](docs/observabilidade.md) | Logs e métricas |
+| [Gestão de configuração](docs/gestao-de-configuracao.md) | Branches, commits e versões |
+| [Roadmap](docs/roadmap.md) | Marcos e dependências |
+| [ADRs](docs/adr/README.md) | Decisões arquitecturais |
 
-Commits no estilo Conventional Commits: `docs: define initial project scope`, `feat(api): add health endpoint`. Tags semânticas após entregas estáveis, começando pela série 0.x.
+## Ambiente de desenvolvimento
 
-## Testes e qualidade
+Pré-requisitos previstos: Git, Python, Go, Android SDK/Android Studio e browser moderno. Firebase remoto exige Internet; serão utilizados adaptadores simulados para testes locais. As versões mínimas, dependências fixadas e instruções de execução serão documentadas no bootstrap dos respectivos componentes.
 
-Testes unitários Python e Go, integração gateway/motor/Firebase, testes de contrato OpenAPI, validação por descodificação, testes de autorização e quotas, concorrência e carga. Utilizar `go test -race ./...` no módulo Go e pytest no módulo Python quando existirem. CI deve bloquear integração perante falhas. Testar ainda responsividade, internacionalização e acessibilidade.
+Privilegiar ambientes virtuais, cache pip/Go/Gradle, pacotes locais e builds offline após a preparação inicial. Não instalar dependências antecipadamente sem necessidade. Credenciais privadas ficam fora do Git. Actualmente não existe uma implementação executável nem instruções de arranque validadas.
+
+## Qualidade e integração contínua
+
+GitHub Actions acompanhará o desenvolvimento desde a preparação dos ambientes. Os workflows serão introduzidos progressivamente: Python (lint e pytest), Go (build, vet, testes e race detector), Web, Android, integração, segurança e release. Alterações de contratos partilhados devem activar as validações relevantes. Os testes incluem segurança, concorrência, carga, acessibilidade e descodificação independente de QR. Releases poderão disponibilizar artefactos sem deployment público.
+
+## Gestão de configuração
+
+A branch `main` representa a linha estável. Criar branches temporárias por actividade a partir de uma base adequada, realizar commits atómicos em português, publicar e integrar mediante revisão e validação. Utilizar prefixos Conventional Commits, com nomes de branches em português, sem espaços ou acentos.
+
+| Branch | Actividade |
+|---|---|
+| `docs/documentacao-inicial` | Documentação inicial e README |
+| `chore/estrutura-monorepo` | Bootstrap e ambientes |
+| `feat/contratos-api` | OpenAPI público e interno |
+| `feat/motor-geracao-qr` | Motor Python |
+| `feat/gateway-api` | Gateway Go |
+
+Exemplo: `feat: implementar geração de códigos QR estáticos`. Versionamento semântico na série 0.x durante o desenvolvimento inicial.
 
 ## Roadmap
 
-1. Documentação, estrutura do monorepo e contratos.
-2. Motor Python: QR básico, estilos e exportação.
-3. Gateway Go: encaminhamento, concorrência e limites.
-4. Firebase, credenciais e autorização.
-5. Website responsivo e editor.
-6. Portal de programadores e documentação pública.
-7. Android, integração e publicação.
+- [x] Planeamento arquitectural e inicialização do repositório.
+- [x] Documentação inicial v0.1 (pendente de revisão).
+- [ ] Bootstrap do monorepo e contratos OpenAPI, em paralelo.
+- [ ] Motor Python, gateway Go, Firebase e sistema de design, conforme dependências.
+- [ ] Integração, concorrência, segurança, cache e quotas.
+- [ ] Website, portal e Android; desenvolvimento com mocks quando aplicável.
+- [ ] Testes integrados, carga, demonstração local e release.
 
-## Autor e direitos
+## Autor e licença
 
-Copyright © 2026 elrayn96. Todos os direitos reservados. Código publicamente visível não significa código aberto. Consultar [LICENSE](LICENSE). A utilização gratuita do serviço não constitui licença sobre o código-fonte. Dependências de terceiros mantêm as respectivas licenças.
+Copyright © 2026 elrayn96. Todos os direitos reservados. Consultar [LICENSE](LICENSE). A visibilidade pública do código não equivale a uma licença open-source. A utilização gratuita do serviço não concede direitos de reutilização do código-fonte. Dependências de terceiros mantêm as respectivas licenças.
 
-Repositório: https://github.com/elrayn96/qrcode_generator
+Repositório: [elrayn96/qrcode_generator](https://github.com/elrayn96/qrcode_generator).
