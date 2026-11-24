@@ -1,0 +1,7 @@
+{
+  "type": "urn:gqr:error:invalid-data",
+  "title": "Invalid request",
+  "status": 422,
+  "code": "INVALID_DATA",
+  "requestId": "req_exemplo"
+}
