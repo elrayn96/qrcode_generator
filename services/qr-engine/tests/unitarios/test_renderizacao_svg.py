@@ -5,11 +5,13 @@ import pytest
 from src.core.excecoes import ErroDimensaoQR
 from src.motor.matriz import gerar_matriz
 from src.renderizacao.cores import (
+    PRETO,
     TRANSPARENTE,
     converter_cor,
 )
 from src.renderizacao.geometria import calcular_geometria
 from src.renderizacao.modulos import iterar_modulos_escuros
+from src.renderizacao.olhos import EstiloOlhos
 from src.renderizacao.svg import (
     SVG_NS,
     renderizar_svg,
@@ -297,3 +299,87 @@ def test_seguranca_svg_personalizado(forma):
         assert all(not atributo.lower().startswith("on") for atributo in elemento.attrib)
 
     assert b"<script>" not in resultado.dados
+
+
+@pytest.mark.parametrize("exterior", ["square", "rounded", "dots"])
+@pytest.mark.parametrize("interior", ["square", "rounded", "dots"])
+def test_formas_olhos_svg(exterior, interior):
+    resultado = renderizar_svg(
+        gerar_matriz("example"),
+        olhos=EstiloOlhos(
+            forma_exterior=exterior,
+            forma_interior=interior,
+            cor_exterior=PRETO,
+            cor_interior=PRETO,
+        ),
+    )
+
+    raiz = fromstring(resultado.dados)
+
+    grupo = raiz.find(f"{{{SVG_NS}}}g[@id='qr-eyes']")
+
+    assert grupo is not None
+    assert len(grupo) == 6
+
+
+def test_cores_independentes_olhos_svg():
+    resultado = renderizar_svg(
+        gerar_matriz("example"),
+        olhos=EstiloOlhos(
+            forma_exterior="rounded",
+            forma_interior="dots",
+            cor_exterior=converter_cor("#4C1D95"),
+            cor_interior=converter_cor("#7C3AED"),
+        ),
+    )
+
+    raiz = fromstring(resultado.dados)
+
+    grupo = raiz.find(f"{{{SVG_NS}}}g[@id='qr-eyes']")
+
+    assert grupo is not None
+
+    elementos = list(grupo)
+
+    for indice in (0, 2, 4):
+        assert elementos[indice].attrib["fill"] == "#4C1D95"
+
+        assert elementos[indice].attrib["fill-rule"] == "evenodd"
+
+        assert elementos[indice + 1].attrib["fill"] == "#7C3AED"
+
+
+def test_olhos_transparentes_svg():
+    resultado = renderizar_svg(
+        gerar_matriz("example"),
+        cor_fundo=TRANSPARENTE,
+        olhos=EstiloOlhos(
+            forma_exterior="rounded",
+            forma_interior="square",
+            cor_exterior=PRETO,
+            cor_interior=PRETO,
+        ),
+    )
+
+    raiz = fromstring(resultado.dados)
+
+    assert raiz.find(f"{{{SVG_NS}}}rect") is None
+
+    grupo = raiz.find(f"{{{SVG_NS}}}g[@id='qr-eyes']")
+
+    assert grupo is not None
+
+    assert sum(elemento.attrib.get("fill-rule") == "evenodd" for elemento in grupo) == 3
+
+
+def test_caminhos_olhos_svg_deterministicos():
+    matriz = gerar_matriz("example")
+
+    estilo = EstiloOlhos(
+        forma_exterior="rounded",
+        forma_interior="dots",
+        cor_exterior=PRETO,
+        cor_interior=PRETO,
+    )
+
+    assert renderizar_svg(matriz, olhos=estilo).dados == renderizar_svg(matriz, olhos=estilo).dados

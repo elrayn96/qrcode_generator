@@ -15,6 +15,12 @@ from src.renderizacao.modulos import (
     ModuloVisual,
     iterar_modulos_escuros,
 )
+from src.renderizacao.olhos import (
+    EstiloOlhos,
+    RegiaoOlho,
+    calcular_geometria_olhos,
+    pertence_a_olho,
+)
 from src.renderizacao.resultado import ResultadoRenderizacao
 from src.schemas.personalizacao import Forma
 
@@ -37,20 +43,35 @@ def atributos_cor(cor: CorRGBA) -> dict[str, str]:
 def construir_caminho(
     matriz: MatrizQR,
     geometria: GeometriaQR,
+    excluir_olhos: bool = False,
 ) -> str:
     segmentos = []
 
     for linha, valores in enumerate(matriz.modulos):
         coluna = 0
+        _linha, _valores = linha, valores
+        _dimensao_matriz = matriz.dimensao
+
+        def desenhavel(
+            c: int, _linha=_linha, _dimensao_matriz=_dimensao_matriz, _valores=_valores
+        ) -> bool:
+            return _valores[c] != 0 and not (
+                excluir_olhos
+                and pertence_a_olho(
+                    _linha,
+                    c,
+                    _dimensao_matriz,
+                )
+            )
 
         while coluna < matriz.dimensao:
-            if valores[coluna] == 0:
+            if not desenhavel(coluna):
                 coluna += 1
                 continue
 
             inicio = coluna
 
-            while coluna < matriz.dimensao and valores[coluna] == 1:
+            while coluna < matriz.dimensao and desenhavel(coluna):
                 coluna += 1
 
             x = geometria.origem_x + inicio * geometria.escala
@@ -124,6 +145,7 @@ def desenhar_modulos_personalizados(
     geometria: GeometriaQR,
     forma: Forma,
     cor_modulos: CorRGBA,
+    excluir_olhos: bool = False,
 ) -> None:
     funcionais = []
     dados = []
@@ -132,6 +154,7 @@ def desenhar_modulos_personalizados(
         matriz,
         geometria,
         forma,
+        excluir_olhos=excluir_olhos,
     ):
         if modulo.funcional:
             funcionais.append(construir_segmento(modulo))
@@ -168,6 +191,7 @@ def renderizar_svg(
     cor_modulos: CorRGBA = PRETO,
     cor_fundo: CorRGBA = BRANCO,
     forma: Forma = "square",
+    olhos: EstiloOlhos | None = None,
 ) -> ResultadoRenderizacao:
     geometria = calcular_geometria(
         dimensao_matriz=matriz.dimensao,
@@ -175,7 +199,11 @@ def renderizar_svg(
         margem=margem,
     )
 
-    if forma != "square" and geometria.escala < ESCALA_MINIMA_PERSONALIZACAO:
+    personalizacao_curva = forma != "square" or (
+        olhos is not None and (olhos.forma_exterior != "square" or olhos.forma_interior != "square")
+    )
+
+    if personalizacao_curva and geometria.escala < ESCALA_MINIMA_PERSONALIZACAO:
         raise ErroDimensaoQR()
 
     raiz = Element(
@@ -206,7 +234,11 @@ def renderizar_svg(
             raiz,
             "path",
             {
-                "d": construir_caminho(matriz, geometria),
+                "d": construir_caminho(
+                    matriz,
+                    geometria,
+                    excluir_olhos=olhos is not None,
+                ),
                 "shape-rendering": "crispEdges",
                 **atributos_cor(cor_modulos),
             },
@@ -219,6 +251,14 @@ def renderizar_svg(
             geometria,
             forma,
             cor_modulos,
+            excluir_olhos=olhos is not None,
+        )
+
+    if olhos is not None:
+        desenhar_olhos_svg(
+            raiz,
+            geometria,
+            olhos,
         )
 
     dados = tostring(
@@ -233,3 +273,74 @@ def renderizar_svg(
         largura=tamanho,
         altura=tamanho,
     )
+
+
+def construir_caminho_regiao(
+    regiao: RegiaoOlho,
+) -> str:
+    x = regiao.x
+    y = regiao.y
+    d = regiao.dimensao
+    r = regiao.raio
+
+    if r == 0:
+        return f"M{x} {y}h{d}v{d}h{-d}z"
+
+    p = formatar_numero
+
+    return (
+        f"M{p(x + r)} {p(y)}"
+        f"H{p(x + d - r)}"
+        f"A{p(r)} {p(r)} 0 0 1 "
+        f"{p(x + d)} {p(y + r)}"
+        f"V{p(y + d - r)}"
+        f"A{p(r)} {p(r)} 0 0 1 "
+        f"{p(x + d - r)} {p(y + d)}"
+        f"H{p(x + r)}"
+        f"A{p(r)} {p(r)} 0 0 1 "
+        f"{p(x)} {p(y + d - r)}"
+        f"V{p(y + r)}"
+        f"A{p(r)} {p(r)} 0 0 1 "
+        f"{p(x + r)} {p(y)}z"
+    )
+
+
+def desenhar_olhos_svg(
+    raiz: Element,
+    geometria: GeometriaQR,
+    estilo: EstiloOlhos,
+) -> None:
+    grupo = SubElement(
+        raiz,
+        "g",
+        {"id": "qr-eyes"},
+    )
+
+    for olho in calcular_geometria_olhos(
+        geometria,
+        estilo,
+    ):
+        exterior = construir_caminho_regiao(olho.exterior)
+
+        abertura = construir_caminho_regiao(olho.abertura)
+
+        interior = construir_caminho_regiao(olho.interior)
+
+        SubElement(
+            grupo,
+            "path",
+            {
+                "d": exterior + abertura,
+                "fill-rule": "evenodd",
+                **atributos_cor(estilo.cor_exterior),
+            },
+        )
+
+        SubElement(
+            grupo,
+            "path",
+            {
+                "d": interior,
+                **atributos_cor(estilo.cor_interior),
+            },
+        )
