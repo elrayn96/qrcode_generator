@@ -48,3 +48,7 @@ class ErroCapacidadeQR(ErroDadosInvalidos):
 
 class ErroCodificacaoQR(ErroDadosInvalidos):
     """Conteúdo incompatível com a codificação suportada."""
+
+
+class ErroDimensaoQR(ErroDadosInvalidos):
+    """Dimensão insuficiente para representar a matriz QR."""
