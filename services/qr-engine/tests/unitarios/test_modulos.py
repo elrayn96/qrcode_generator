@@ -6,6 +6,7 @@ from src.renderizacao.modulos import (
     determinar_forma,
     iterar_modulos_escuros,
 )
+from src.renderizacao.olhos import pertence_a_olho
 
 
 @pytest.mark.parametrize(
@@ -152,3 +153,58 @@ def test_matriz_densa_preserva_padroes_funcionais():
             assert modulo.forma == "square"
         else:
             assert modulo.forma == "dots"
+
+
+def test_excluir_olhos_dos_modulos():
+    matriz = gerar_matriz("example")
+
+    geometria = calcular_geometria(matriz.dimensao, 512)
+
+    modulos = list(
+        iterar_modulos_escuros(
+            matriz,
+            geometria,
+            excluir_olhos=True,
+        )
+    )
+
+    assert modulos
+
+    assert all(
+        not pertence_a_olho(
+            modulo.linha,
+            modulo.coluna,
+            matriz.dimensao,
+        )
+        for modulo in modulos
+    )
+
+    assert len(modulos) == matriz.modulos_escuros - 99
+
+
+def test_exclusao_olhos_preserva_outros_modulos():
+    matriz = gerar_matriz("example")
+
+    geometria = calcular_geometria(matriz.dimensao, 512)
+
+    original = list(iterar_modulos_escuros(matriz, geometria))
+
+    esperado = [
+        modulo
+        for modulo in original
+        if not pertence_a_olho(
+            modulo.linha,
+            modulo.coluna,
+            matriz.dimensao,
+        )
+    ]
+
+    resultado = list(
+        iterar_modulos_escuros(
+            matriz,
+            geometria,
+            excluir_olhos=True,
+        )
+    )
+
+    assert resultado == esperado
