@@ -5,11 +5,13 @@ from PIL import Image
 from src.core.excecoes import ErroDimensaoQR
 from src.motor.matriz import gerar_matriz
 from src.renderizacao.cores import (
+    PRETO,
     TRANSPARENTE,
     converter_cor,
 )
 from src.renderizacao.geometria import calcular_geometria
 from src.renderizacao.modulos import iterar_modulos_escuros
+from src.renderizacao.olhos import EstiloOlhos
 from src.renderizacao.png import renderizar_png
 
 
@@ -234,3 +236,104 @@ def test_centro_modulos_dados_png(forma):
             )
 
             assert imagem.getpixel(centro) == (0, 0, 0, 255)
+
+
+@pytest.mark.parametrize("exterior", ["square", "rounded", "dots"])
+@pytest.mark.parametrize("interior", ["square", "rounded", "dots"])
+def test_formas_olhos_png(exterior, interior):
+    estilo = EstiloOlhos(
+        forma_exterior=exterior,
+        forma_interior=interior,
+        cor_exterior=PRETO,
+        cor_interior=PRETO,
+    )
+
+    resultado = renderizar_png(
+        gerar_matriz("example"),
+        olhos=estilo,
+    )
+
+    with Image.open(BytesIO(resultado.dados)) as imagem:
+        assert imagem.size == (512, 512)
+        imagem.verify()
+
+
+def test_cores_independentes_olhos_png():
+    matriz = gerar_matriz("example")
+
+    geometria = calcular_geometria(matriz.dimensao, 512)
+
+    estilo = EstiloOlhos(
+        forma_exterior="square",
+        forma_interior="dots",
+        cor_exterior=converter_cor("#4C1D95"),
+        cor_interior=converter_cor("#7C3AED"),
+    )
+
+    resultado = renderizar_png(
+        matriz,
+        olhos=estilo,
+    )
+
+    x = geometria.origem_x
+    y = geometria.origem_y
+    e = geometria.escala
+
+    with Image.open(BytesIO(resultado.dados)) as imagem:
+        exterior = imagem.getpixel((x, y))
+
+        interior = imagem.getpixel((x + 3 * e + e // 2, y + 3 * e + e // 2))
+
+    assert exterior == (76, 29, 149, 255)
+    assert interior == (124, 58, 237, 255)
+
+
+def test_abertura_transparente_olhos_png():
+    matriz = gerar_matriz("example")
+
+    geometria = calcular_geometria(matriz.dimensao, 512)
+
+    estilo = EstiloOlhos(
+        forma_exterior="square",
+        forma_interior="square",
+        cor_exterior=PRETO,
+        cor_interior=PRETO,
+    )
+
+    resultado = renderizar_png(
+        matriz,
+        cor_fundo=TRANSPARENTE,
+        olhos=estilo,
+    )
+
+    e = geometria.escala
+
+    ponto = (
+        geometria.origem_x + e + e // 2,
+        geometria.origem_y + 3 * e + e // 2,
+    )
+
+    with Image.open(BytesIO(resultado.dados)) as imagem:
+        assert imagem.getpixel(ponto)[3] == 0
+
+
+def test_olhos_padrao_preservam_imagem_png():
+    matriz = gerar_matriz("example")
+
+    convencional = renderizar_png(matriz)
+
+    personalizado = renderizar_png(
+        matriz,
+        olhos=EstiloOlhos(
+            forma_exterior="square",
+            forma_interior="square",
+            cor_exterior=PRETO,
+            cor_interior=PRETO,
+        ),
+    )
+
+    with (
+        Image.open(BytesIO(convencional.dados)) as primeira,
+        Image.open(BytesIO(personalizado.dados)) as segunda,
+    ):
+        assert primeira.tobytes() == segunda.tobytes()
