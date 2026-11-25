@@ -11,6 +11,7 @@ from src.renderizacao.png import renderizar_png
 from src.renderizacao.resultado import ResultadoRenderizacao
 from src.renderizacao.svg import renderizar_svg
 from src.schemas.pedido import PedidoRenderizacao
+from src.schemas.personalizacao import Forma
 
 
 def resolver_cores(
@@ -35,17 +36,24 @@ def resolver_cores(
     return cor_modulos, cor_fundo
 
 
+def resolver_forma(
+    pedido: PedidoRenderizacao,
+) -> Forma:
+    modulos = pedido.style.modules
+
+    if modulos is None:
+        return "square"
+
+    return modulos.shape or "square"
+
+
 def validar_estilo_suportado(
     pedido: PedidoRenderizacao,
 ) -> None:
     estilo = pedido.style
 
-    if estilo.modules is not None:
-        if estilo.modules.shape not in (None, "square"):
-            raise ErroDadosInvalidos()
-
-        if estilo.modules.gradient is not None:
-            raise ErroDadosInvalidos()
+    if estilo.modules is not None and estilo.modules.gradient is not None:
+        raise ErroDadosInvalidos()
 
     if estilo.background is not None and estilo.background.gradient is not None:
         raise ErroDadosInvalidos()
@@ -67,9 +75,8 @@ def renderizar(
     validar_estilo_suportado(pedido)
 
     cor_modulos, cor_fundo = resolver_cores(pedido)
+    forma = resolver_forma(pedido)
 
-    # Nesta etapa, os módulos devem ser opacos
-    # para manter consistência entre PNG e SVG.
     if cor_modulos.alfa != 255:
         raise ErroDadosInvalidos()
 
@@ -78,15 +85,13 @@ def renderizar(
         correcao_erros=pedido.options.errorCorrection,
     )
 
-    parametros = {
-        "matriz": matriz,
-        "tamanho": pedido.output.size,
-        "margem": pedido.output.margin,
-        "cor_modulos": cor_modulos,
-        "cor_fundo": cor_fundo,
-    }
+    renderizador = renderizar_svg if pedido.output.format == "svg" else renderizar_png
 
-    if pedido.output.format == "svg":
-        return renderizar_svg(**parametros)
-
-    return renderizar_png(**parametros)
+    return renderizador(
+        matriz=matriz,
+        tamanho=pedido.output.size,
+        margem=pedido.output.margin,
+        cor_modulos=cor_modulos,
+        cor_fundo=cor_fundo,
+        forma=forma,
+    )

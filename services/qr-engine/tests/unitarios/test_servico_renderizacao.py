@@ -61,12 +61,85 @@ def test_renderizacao_personalizada():
     assert b"#7C3AED" in resultado.dados
 
 
-def test_rejeitar_forma_ainda_nao_suportada():
+@pytest.mark.parametrize(
+    "forma",
+    ["square", "rounded", "dots"],
+)
+@pytest.mark.parametrize(
+    "formato",
+    ["png", "svg"],
+)
+def test_renderizacao_formas(forma, formato):
+    pedido = PedidoRenderizacao.model_validate(
+        {
+            "content": "https://example.com",
+            "output": {
+                "format": formato,
+                "size": 512,
+            },
+            "style": {
+                "modules": {
+                    "shape": forma,
+                    "color": "#7C3AED",
+                },
+            },
+        }
+    )
+
+    resultado = renderizar(pedido)
+
+    assert resultado.extensao == formato
+    assert resultado.tamanho_bytes > 0
+    assert resultado.largura == 512
+
+
+@pytest.mark.parametrize(
+    "formato",
+    ["png", "svg"],
+)
+def test_forma_padrao_preservada(formato):
+    padrao = PedidoRenderizacao.model_validate(
+        {
+            "content": "example",
+            "output": {"format": formato},
+        }
+    )
+
+    explicito = PedidoRenderizacao.model_validate(
+        {
+            "content": "example",
+            "output": {"format": formato},
+            "style": {
+                "modules": {
+                    "shape": "square",
+                }
+            },
+        }
+    )
+
+    assert renderizar(padrao).dados == renderizar(explicito).dados
+
+
+def test_gradiente_ainda_nao_suportado():
     pedido = PedidoRenderizacao.model_validate(
         {
             "content": "example",
             "style": {
-                "modules": {"shape": "rounded"},
+                "modules": {
+                    "gradient": {
+                        "type": "linear",
+                        "stops": [
+                            {
+                                "position": 0.0,
+                                "color": "#000000",
+                            },
+                            {
+                                "position": 1.0,
+                                "color": "#7C3AED",
+                            },
+                        ],
+                    },
+                },
             },
         }
     )
