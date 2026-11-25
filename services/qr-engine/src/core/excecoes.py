@@ -40,3 +40,11 @@ class ErroTempoExcedido(ErroMotor):
     status = 504
     codigo = "GATEWAY_TIMEOUT"
     titulo = "Processing timeout"
+
+
+class ErroCapacidadeQR(ErroDadosInvalidos):
+    """Conteúdo superior à capacidade de um código QR."""
+
+
+class ErroCodificacaoQR(ErroDadosInvalidos):
+    """Conteúdo incompatível com a codificação suportada."""
