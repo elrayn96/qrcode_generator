@@ -166,3 +166,76 @@ def test_resultado_nao_expoe_bytes():
     resultado = renderizar(PedidoRenderizacao(content="example"))
 
     assert "dados=" not in repr(resultado)
+
+
+@pytest.mark.parametrize("formato", ["png", "svg"])
+@pytest.mark.parametrize("exterior", ["square", "rounded", "dots"])
+@pytest.mark.parametrize("interior", ["square", "rounded", "dots"])
+def test_personalizacao_olhos(
+    formato,
+    exterior,
+    interior,
+):
+    pedido = PedidoRenderizacao.model_validate(
+        {
+            "content": "https://example.com",
+            "output": {
+                "format": formato,
+                "size": 512,
+            },
+            "style": {
+                "eyes": {
+                    "outer": {
+                        "shape": exterior,
+                        "color": "#4C1D95",
+                    },
+                    "inner": {
+                        "shape": interior,
+                        "color": "#7C3AED",
+                    },
+                },
+            },
+        }
+    )
+
+    resultado = renderizar(pedido)
+
+    assert resultado.extensao == formato
+    assert resultado.tamanho_bytes > 0
+    assert resultado.largura == 512
+
+
+def test_olhos_herdam_cor_modulos():
+    pedido = PedidoRenderizacao.model_validate(
+        {
+            "content": "example",
+            "output": {"format": "svg"},
+            "style": {
+                "modules": {
+                    "color": "#7C3AED",
+                },
+                "eyes": {
+                    "outer": {
+                        "shape": "rounded",
+                    },
+                    "inner": {
+                        "shape": "dots",
+                    },
+                },
+            },
+        }
+    )
+
+    resultado = renderizar(pedido)
+
+    from xml.etree.ElementTree import fromstring
+
+    raiz = fromstring(resultado.dados)
+
+    ns = "http://www.w3.org/2000/svg"
+
+    grupo = raiz.find(f"{{{ns}}}g[@id='qr-eyes']")
+
+    assert grupo is not None
+
+    assert all(elemento.attrib["fill"] == "#7C3AED" for elemento in grupo)

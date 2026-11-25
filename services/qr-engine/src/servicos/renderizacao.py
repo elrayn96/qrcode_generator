@@ -7,6 +7,7 @@ from src.renderizacao.cores import (
     CorRGBA,
     converter_cor,
 )
+from src.renderizacao.olhos import EstiloOlhos
 from src.renderizacao.png import renderizar_png
 from src.renderizacao.resultado import ResultadoRenderizacao
 from src.renderizacao.svg import renderizar_svg
@@ -61,7 +62,6 @@ def validar_estilo_suportado(
     if any(
         componente is not None
         for componente in (
-            estilo.eyes,
             estilo.logo,
             estilo.frame,
         )
@@ -76,6 +76,7 @@ def renderizar(
 
     cor_modulos, cor_fundo = resolver_cores(pedido)
     forma = resolver_forma(pedido)
+    olhos = resolver_olhos(pedido, cor_modulos)
 
     if cor_modulos.alfa != 255:
         raise ErroDadosInvalidos()
@@ -94,4 +95,40 @@ def renderizar(
         cor_modulos=cor_modulos,
         cor_fundo=cor_fundo,
         forma=forma,
+        olhos=olhos,
+    )
+
+
+def resolver_olhos(
+    pedido: PedidoRenderizacao,
+    cor_modulos: CorRGBA,
+) -> EstiloOlhos | None:
+    olhos = pedido.style.eyes
+
+    if olhos is None:
+        return None
+
+    forma_exterior = "square"
+    forma_interior = "square"
+
+    cor_exterior = cor_modulos
+    cor_interior = cor_modulos
+
+    if olhos.outer is not None:
+        forma_exterior = olhos.outer.shape or "square"
+
+        if olhos.outer.color is not None:
+            cor_exterior = converter_cor(olhos.outer.color)
+
+    if olhos.inner is not None:
+        forma_interior = olhos.inner.shape or "square"
+
+        if olhos.inner.color is not None:
+            cor_interior = converter_cor(olhos.inner.color)
+
+    return EstiloOlhos(
+        forma_exterior=forma_exterior,
+        forma_interior=forma_interior,
+        cor_exterior=cor_exterior,
+        cor_interior=cor_interior,
     )
