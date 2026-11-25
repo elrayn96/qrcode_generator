@@ -2,12 +2,14 @@ import re
 from xml.etree.ElementTree import fromstring
 
 import pytest
+from src.core.excecoes import ErroDimensaoQR
 from src.motor.matriz import gerar_matriz
 from src.renderizacao.cores import (
     TRANSPARENTE,
     converter_cor,
 )
 from src.renderizacao.geometria import calcular_geometria
+from src.renderizacao.modulos import iterar_modulos_escuros
 from src.renderizacao.svg import (
     SVG_NS,
     renderizar_svg,
@@ -136,3 +138,162 @@ def test_svg_deterministico():
     matriz = gerar_matriz("example")
 
     assert renderizar_svg(matriz).dados == renderizar_svg(matriz).dados
+
+
+@pytest.mark.parametrize(
+    "forma",
+    ["square", "rounded", "dots"],
+)
+def test_renderizar_formas_svg(forma):
+    resultado = renderizar_svg(
+        gerar_matriz("example"),
+        forma=forma,
+    )
+
+    raiz = fromstring(resultado.dados)
+
+    assert raiz.tag == f"{{{SVG_NS}}}svg"
+
+
+def test_modulos_arredondados_svg():
+    resultado = renderizar_svg(
+        gerar_matriz("example"),
+        forma="rounded",
+    )
+
+    raiz = fromstring(resultado.dados)
+
+    grupo = raiz.find(f"{{{SVG_NS}}}g")
+
+    assert grupo is not None
+
+    modulos = grupo.findall(f"{{{SVG_NS}}}rect")
+
+    assert modulos
+
+    assert all(float(modulo.attrib["rx"]) > 0 for modulo in modulos)
+
+
+def test_modulos_circulares_svg():
+    resultado = renderizar_svg(
+        gerar_matriz("example"),
+        forma="dots",
+    )
+
+    raiz = fromstring(resultado.dados)
+
+    circulos = raiz.findall(f".//{{{SVG_NS}}}circle")
+
+    assert circulos
+
+    assert all(float(circulo.attrib["r"]) > 0 for circulo in circulos)
+
+
+@pytest.mark.parametrize(
+    "forma",
+    ["rounded", "dots"],
+)
+def test_padroes_funcionais_svg(forma):
+    matriz = gerar_matriz("example")
+
+    resultado = renderizar_svg(
+        matriz,
+        forma=forma,
+    )
+
+    raiz = fromstring(resultado.dados)
+    caminho = raiz.find(f"{{{SVG_NS}}}path")
+
+    assert caminho is not None
+
+    assert caminho.attrib["shape-rendering"] == "crispEdges"
+
+    assert caminho.attrib["d"]
+
+
+@pytest.mark.parametrize(
+    ("forma", "elemento"),
+    [
+        ("rounded", "rect"),
+        ("dots", "circle"),
+    ],
+)
+def test_quantidade_modulos_personalizados_svg(
+    forma,
+    elemento,
+):
+    matriz = gerar_matriz("example")
+
+    geometria = calcular_geometria(
+        matriz.dimensao,
+        512,
+    )
+
+    quantidade = sum(
+        not modulo.funcional
+        for modulo in iterar_modulos_escuros(
+            matriz,
+            geometria,
+            forma,
+        )
+    )
+
+    resultado = renderizar_svg(
+        matriz,
+        forma=forma,
+    )
+
+    raiz = fromstring(resultado.dados)
+    grupo = raiz.find(f"{{{SVG_NS}}}g")
+
+    assert grupo is not None
+
+    elementos = grupo.findall(f"{{{SVG_NS}}}{elemento}")
+
+    assert len(elementos) == quantidade
+
+
+@pytest.mark.parametrize(
+    "forma",
+    ["rounded", "dots"],
+)
+def test_escala_insuficiente_svg(forma):
+    matriz = gerar_matriz("example")
+
+    with pytest.raises(ErroDimensaoQR):
+        renderizar_svg(
+            matriz,
+            tamanho=128,
+            margem=32,
+            forma=forma,
+        )
+
+
+@pytest.mark.parametrize(
+    "forma",
+    ["square", "rounded", "dots"],
+)
+def test_seguranca_svg_personalizado(forma):
+    resultado = renderizar_svg(
+        gerar_matriz("<script>alert(1)</script>"),
+        forma=forma,
+    )
+
+    raiz = fromstring(resultado.dados)
+
+    permitidos = {
+        "svg",
+        "rect",
+        "path",
+        "g",
+        "circle",
+    }
+
+    for elemento in raiz.iter():
+        nome = elemento.tag.split("}")[-1]
+
+        assert nome in permitidos
+
+        assert all(not atributo.lower().startswith("on") for atributo in elemento.attrib)
+
+    assert b"<script>" not in resultado.dados
