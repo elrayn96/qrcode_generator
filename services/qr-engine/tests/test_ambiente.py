@@ -21,14 +21,14 @@ def test_fastapi():
 
 
 def test_geracao_qr():
-    qr = segno.make_qr("https://example.com")
+    qr = segno.make_qr("https://ntizoconnect.me")
 
     assert qr.matrix
     assert qr.version >= 1
 
 
 def test_exportacao_png():
-    qr = segno.make_qr("https://example.com")
+    qr = segno.make_qr("https://ntizoconnect.me")
     buffer = BytesIO()
 
     qr.save(buffer, kind="png", scale=10)

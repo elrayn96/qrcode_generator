@@ -28,7 +28,7 @@ def test_forma_modulo_dados(forma):
     ["square", "rounded", "dots"],
 )
 def test_padroes_funcionais_preservados(forma):
-    matriz = gerar_matriz("https://example.com")
+    matriz = gerar_matriz("https://ntizoconnect.me")
 
     geometria = calcular_geometria(
         matriz.dimensao,

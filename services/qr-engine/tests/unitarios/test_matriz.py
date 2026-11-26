@@ -16,7 +16,7 @@ from src.motor.matriz import MatrizQR, gerar_matriz
 
 
 def test_gerar_matriz():
-    matriz = gerar_matriz("https://example.com")
+    matriz = gerar_matriz("https://ntizoconnect.me")
 
     assert isinstance(matriz, MatrizQR)
     assert matriz.dimensao >= 21
@@ -24,7 +24,7 @@ def test_gerar_matriz():
 
 
 def test_dimensao_corresponde_versao():
-    matriz = gerar_matriz("https://example.com")
+    matriz = gerar_matriz("https://ntizoconnect.me")
 
     assert matriz.dimensao == 17 + 4 * matriz.versao
 
@@ -80,8 +80,8 @@ def test_mascara_valida():
 
 
 def test_geracao_deterministica():
-    primeira = gerar_matriz("https://example.com")
-    segunda = gerar_matriz("https://example.com")
+    primeira = gerar_matriz("https://ntizoconnect.me")
+    segunda = gerar_matriz("https://ntizoconnect.me")
 
     assert primeira == segunda
 

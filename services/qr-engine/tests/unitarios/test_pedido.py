@@ -5,10 +5,10 @@ from src.schemas.pedido import PedidoRenderizacao
 
 def test_pedido_minimo():
     pedido = PedidoRenderizacao(
-        content="https://example.com",
+        content="https://ntizoconnect.me",
     )
 
-    assert pedido.content == "https://example.com"
+    assert pedido.content == "https://ntizoconnect.me"
     assert pedido.output.format == "png"
     assert pedido.output.size == 512
     assert pedido.output.margin == 4
@@ -18,7 +18,7 @@ def test_pedido_minimo():
 def test_pedido_personalizado():
     pedido = PedidoRenderizacao.model_validate(
         {
-            "content": "https://example.com",
+            "content": "https://ntizoconnect.me",
             "output": {
                 "format": "svg",
                 "size": 1024,

@@ -6,7 +6,7 @@ from src.motor.matriz import gerar_matriz
     "conteudo",
     [
         pytest.param(
-            "https://example.com",
+            "https://ntizoconnect.me",
             id="url",
         ),
         pytest.param(
@@ -22,7 +22,7 @@ from src.motor.matriz import gerar_matriz
             id="vcard",
         ),
         pytest.param(
-            "mailto:contacto@example.com?subject=Ola",
+            "mailto:contacto@ntizoconnect.me?subject=Ola",
             id="email",
         ),
         pytest.param(

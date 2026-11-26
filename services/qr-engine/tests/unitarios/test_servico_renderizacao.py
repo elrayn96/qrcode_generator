@@ -14,7 +14,7 @@ from src.servicos.renderizacao import renderizar
 def test_renderizacao_por_formato(formato, media_type):
     pedido = PedidoRenderizacao.model_validate(
         {
-            "content": "https://example.com",
+            "content": "https://ntizoconnect.me",
             "output": {"format": formato},
         }
     )
@@ -72,7 +72,7 @@ def test_renderizacao_personalizada():
 def test_renderizacao_formas(forma, formato):
     pedido = PedidoRenderizacao.model_validate(
         {
-            "content": "https://example.com",
+            "content": "https://ntizoconnect.me",
             "output": {
                 "format": formato,
                 "size": 512,
@@ -178,7 +178,7 @@ def test_personalizacao_olhos(
 ):
     pedido = PedidoRenderizacao.model_validate(
         {
-            "content": "https://example.com",
+            "content": "https://ntizoconnect.me",
             "output": {
                 "format": formato,
                 "size": 512,
