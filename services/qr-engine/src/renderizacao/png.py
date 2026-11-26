@@ -4,20 +4,34 @@ from PIL import Image, ImageDraw
 
 from src.core.excecoes import ErroDimensaoQR
 from src.motor.matriz import MatrizQR
+from src.renderizacao.composicao import aplicar_preenchimento
 from src.renderizacao.cores import BRANCO, PRETO, CorRGBA
+from src.renderizacao.estilos import EstiloRenderizacao
 from src.renderizacao.formas import (
     ESCALA_MINIMA_PERSONALIZACAO,
     calcular_forma,
 )
-from src.renderizacao.geometria import GeometriaQR, calcular_geometria
+from src.renderizacao.fundo import (
+    EstiloFundo,
+    renderizar_fundo_png,
+)
+from src.renderizacao.geometria import (
+    GeometriaQR,
+    calcular_geometria,
+)
+from src.renderizacao.gradientes import (
+    GeometriaGradiente,
+    Gradiente,
+)
 from src.renderizacao.modulos import (
     ModuloVisual,
     iterar_modulos_escuros,
 )
-from src.renderizacao.olhos import (
-    EstiloOlhos,
-    RegiaoOlho,
-    calcular_geometria_olhos,
+from src.renderizacao.olhos import EstiloOlhos
+from src.renderizacao.olhos_png import renderizar_olhos_png
+from src.renderizacao.preenchimentos import (
+    PreenchimentosOlhos,
+    PreenchimentoVisual,
 )
 from src.renderizacao.resultado import ResultadoRenderizacao
 from src.schemas.personalizacao import Forma
@@ -26,7 +40,7 @@ from src.schemas.personalizacao import Forma
 def desenhar_modulo(
     desenho: ImageDraw.ImageDraw,
     modulo: ModuloVisual,
-    cor: CorRGBA,
+    cor: CorRGBA | int,
 ) -> None:
     geometria = calcular_forma(
         modulo.x,
@@ -35,15 +49,14 @@ def desenhar_modulo(
         modulo.forma,
     )
 
-    x1 = round(geometria.x)
-    y1 = round(geometria.y)
+    caixa = (
+        round(geometria.x),
+        round(geometria.y),
+        round(geometria.x + geometria.largura) - 1,
+        round(geometria.y + geometria.altura) - 1,
+    )
 
-    x2 = round(geometria.x + geometria.largura) - 1
-
-    y2 = round(geometria.y + geometria.altura) - 1
-
-    caixa = (x1, y1, x2, y2)
-    preenchimento = cor.como_tuplo()
+    preenchimento = cor.como_tuplo() if isinstance(cor, CorRGBA) else cor
 
     if modulo.forma == "square":
         desenho.rectangle(
@@ -65,108 +78,130 @@ def desenhar_modulo(
         )
 
 
-def desenhar_regiao_olho(
-    desenho: ImageDraw.ImageDraw,
-    regiao: RegiaoOlho,
-    preenchimento: int,
-) -> None:
-    x1, y1, x2, y2 = regiao.caixa
+def criar_estilo_convencional(
+    cor_modulos: CorRGBA,
+    cor_fundo: CorRGBA,
+    forma: Forma,
+    olhos: EstiloOlhos | None,
+) -> EstiloRenderizacao:
+    preenchimentos_olhos = None
 
-    caixa = (
-        x1,
-        y1,
-        x2 - 1,
-        y2 - 1,
+    if olhos is not None:
+        preenchimentos_olhos = PreenchimentosOlhos(
+            exterior=PreenchimentoVisual(
+                olhos.cor_exterior.como_tuplo(),
+            ),
+            interior=PreenchimentoVisual(
+                olhos.cor_interior.como_tuplo(),
+            ),
+        )
+
+    return EstiloRenderizacao(
+        forma=forma,
+        modulos=PreenchimentoVisual(
+            valor=cor_modulos.como_tuplo(),
+            ambito="global",
+        ),
+        fundo=EstiloFundo(
+            cor=cor_fundo.como_tuplo(),
+        ),
+        olhos=olhos,
+        preenchimentos_olhos=preenchimentos_olhos,
     )
 
-    if regiao.raio == 0:
-        desenho.rectangle(
-            caixa,
-            fill=preenchimento,
-        )
 
-    elif regiao.raio >= regiao.dimensao / 2:
-        desenho.ellipse(
-            caixa,
-            fill=preenchimento,
-        )
-
-    else:
-        desenho.rounded_rectangle(
-            caixa,
-            radius=round(regiao.raio),
-            fill=preenchimento,
-        )
-
-
-def desenhar_olhos_png(
-    imagem: Image.Image,
+def validar_escala(
     geometria: GeometriaQR,
-    estilo: EstiloOlhos,
+    estilo: EstiloRenderizacao,
 ) -> None:
-    for olho in calcular_geometria_olhos(
+    olhos = estilo.olhos
+
+    personalizacao_curva = estilo.forma != "square" or (
+        olhos is not None and (olhos.forma_exterior != "square" or olhos.forma_interior != "square")
+    )
+
+    if personalizacao_curva and geometria.escala < ESCALA_MINIMA_PERSONALIZACAO:
+        raise ErroDimensaoQR()
+
+
+def criar_mascara_modulos(
+    matriz: MatrizQR,
+    geometria: GeometriaQR,
+    estilo: EstiloRenderizacao,
+) -> Image.Image:
+    tamanho = geometria.dimensao_imagem
+
+    mascara = Image.new(
+        "L",
+        (tamanho, tamanho),
+        0,
+    )
+
+    desenho = ImageDraw.Draw(mascara)
+
+    for modulo in iterar_modulos_escuros(
+        matriz,
+        geometria,
+        estilo.forma,
+        excluir_olhos=estilo.requer_olhos_independentes,
+    ):
+        desenhar_modulo(
+            desenho=desenho,
+            modulo=modulo,
+            cor=255,
+        )
+
+    return mascara
+
+
+def desenhar_modulos_png(
+    imagem: Image.Image,
+    matriz: MatrizQR,
+    geometria: GeometriaQR,
+    estilo: EstiloRenderizacao,
+) -> None:
+    preenchimento = estilo.modulos.valor
+
+    # Caminho optimizado para cores sólidas.
+    if not isinstance(preenchimento, Gradiente):
+        desenho = ImageDraw.Draw(imagem)
+
+        cor = CorRGBA(*preenchimento)
+
+        for modulo in iterar_modulos_escuros(
+            matriz,
+            geometria,
+            estilo.forma,
+            excluir_olhos=estilo.requer_olhos_independentes,
+        ):
+            desenhar_modulo(
+                desenho,
+                modulo,
+                cor,
+            )
+
+        return
+
+    dimensao = geometria.dimensao_matriz * geometria.escala
+
+    geometria_gradiente = GeometriaGradiente(
+        largura=dimensao,
+        altura=dimensao,
+        origem_x=geometria.origem_x,
+        origem_y=geometria.origem_y,
+    )
+
+    with criar_mascara_modulos(
+        matriz,
         geometria,
         estilo,
-    ):
-        dimensao = olho.exterior.dimensao
-
-        origem = (
-            olho.exterior.x,
-            olho.exterior.y,
+    ) as mascara:
+        aplicar_preenchimento(
+            imagem=imagem,
+            mascara=mascara,
+            preenchimento=preenchimento,
+            geometria=geometria_gradiente,
         )
-
-        exterior = RegiaoOlho(
-            x=0,
-            y=0,
-            dimensao=dimensao,
-            raio=olho.exterior.raio,
-        )
-
-        abertura = RegiaoOlho(
-            x=geometria.escala,
-            y=geometria.escala,
-            dimensao=olho.abertura.dimensao,
-            raio=olho.abertura.raio,
-        )
-
-        interior = RegiaoOlho(
-            x=2 * geometria.escala,
-            y=2 * geometria.escala,
-            dimensao=olho.interior.dimensao,
-            raio=olho.interior.raio,
-        )
-
-        with Image.new("L", (dimensao, dimensao), 0) as mascara:
-            desenho = ImageDraw.Draw(mascara)
-
-            desenhar_regiao_olho(desenho, exterior, 255)
-
-            desenhar_regiao_olho(desenho, abertura, 0)
-
-            imagem.paste(
-                estilo.cor_exterior.como_tuplo(),
-                origem
-                + (
-                    origem[0] + dimensao,
-                    origem[1] + dimensao,
-                ),
-                mascara,
-            )
-
-        with Image.new("L", (dimensao, dimensao), 0) as mascara:
-            desenho = ImageDraw.Draw(mascara)
-
-            desenhar_regiao_olho(desenho, interior, 255)
-
-            imagem.paste(
-                estilo.cor_interior.como_tuplo(),
-                origem
-                + (
-                    origem[0] + dimensao,
-                    origem[1] + dimensao,
-                ),
-                mascara,
-            )
 
 
 def renderizar_png(
@@ -177,44 +212,49 @@ def renderizar_png(
     cor_fundo: CorRGBA = BRANCO,
     forma: Forma = "square",
     olhos: EstiloOlhos | None = None,
+    *,
+    estilo: EstiloRenderizacao | None = None,
 ) -> ResultadoRenderizacao:
+    estilo = estilo or criar_estilo_convencional(
+        cor_modulos,
+        cor_fundo,
+        forma,
+        olhos,
+    )
+
     geometria = calcular_geometria(
         dimensao_matriz=matriz.dimensao,
         dimensao_imagem=tamanho,
         margem=margem,
     )
 
-    personalizacao_curva = forma != "square" or (
-        olhos is not None and (olhos.forma_exterior != "square" or olhos.forma_interior != "square")
+    validar_escala(
+        geometria,
+        estilo,
     )
 
-    if personalizacao_curva and geometria.escala < ESCALA_MINIMA_PERSONALIZACAO:
-        raise ErroDimensaoQR()
-
-    with Image.new(
-        "RGBA",
-        (tamanho, tamanho),
-        cor_fundo.como_tuplo(),
+    with renderizar_fundo_png(
+        largura=tamanho,
+        altura=tamanho,
+        estilo=estilo.fundo,
     ) as imagem:
-        desenho = ImageDraw.Draw(imagem)
-
-        for modulo in iterar_modulos_escuros(
+        desenhar_modulos_png(
+            imagem,
             matriz,
             geometria,
-            forma,
-            excluir_olhos=olhos is not None,
-        ):
-            desenhar_modulo(
-                desenho,
-                modulo,
-                cor_modulos,
-            )
+            estilo,
+        )
 
-        if olhos is not None:
-            desenhar_olhos_png(
-                imagem,
-                geometria,
-                olhos,
+        if (
+            estilo.requer_olhos_independentes
+            and estilo.olhos is not None
+            and estilo.preenchimentos_olhos is not None
+        ):
+            renderizar_olhos_png(
+                imagem=imagem,
+                geometria=geometria,
+                estilo=estilo.olhos,
+                preenchimentos=estilo.preenchimentos_olhos,
             )
 
         with BytesIO() as memoria:

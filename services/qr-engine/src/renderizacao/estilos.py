@@ -35,6 +35,19 @@ class EstiloRenderizacao:
         if (self.olhos is None) != (self.preenchimentos_olhos is None):
             raise ErroDadosInvalidos()
 
+    @property
+    def requer_olhos_independentes(self) -> bool:
+        if self.olhos is None or self.preenchimentos_olhos is None:
+            return False
+
+        if self.olhos.forma_exterior != "square" or self.olhos.forma_interior != "square":
+            return True
+
+        return (
+            self.preenchimentos_olhos.exterior != self.modulos
+            or self.preenchimentos_olhos.interior != self.modulos
+        )
+
 
 def converter_gradiente(
     modelo: ModeloGradiente,

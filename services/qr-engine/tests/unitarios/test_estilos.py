@@ -211,3 +211,54 @@ def test_rejeitar_pontos_desordenados():
                 modules={"gradient": gradiente},
             )
         )
+
+
+def test_olhos_herdados_nao_requerem_renderizacao_independente():
+    estilo = resolver_estilo(
+        criar_pedido(
+            modules={
+                "gradient": criar_gradiente(),
+            },
+            eyes={
+                "outer": {"shape": "square"},
+                "inner": {"shape": "square"},
+            },
+        )
+    )
+
+    assert not estilo.requer_olhos_independentes
+
+
+def test_olhos_arredondados_requerem_renderizacao_independente():
+    estilo = resolver_estilo(
+        criar_pedido(
+            eyes={
+                "outer": {"shape": "rounded"},
+            },
+        )
+    )
+
+    assert estilo.requer_olhos_independentes
+
+
+def test_olhos_com_gradiente_local_requerem_renderizacao_independente():
+    estilo = resolver_estilo(
+        criar_pedido(
+            modules={
+                "gradient": criar_gradiente(),
+            },
+            eyes={
+                "outer": {
+                    "gradient": criar_gradiente(),
+                },
+            },
+        )
+    )
+
+    assert estilo.requer_olhos_independentes
+
+
+def test_ausencia_de_olhos_personalizados():
+    estilo = resolver_estilo(criar_pedido())
+
+    assert not estilo.requer_olhos_independentes
