@@ -2,17 +2,18 @@ from io import BytesIO
 
 from PIL import Image, ImageDraw
 
-from src.core.excecoes import ErroDimensaoQR
 from src.motor.matriz import MatrizQR
 from src.renderizacao.composicao import aplicar_preenchimento
 from src.renderizacao.cores import BRANCO, PRETO, CorRGBA
-from src.renderizacao.estilos import EstiloRenderizacao
+from src.renderizacao.estilos import (
+    EstiloRenderizacao,
+    criar_estilo_convencional,
+    validar_escala,
+)
 from src.renderizacao.formas import (
-    ESCALA_MINIMA_PERSONALIZACAO,
     calcular_forma,
 )
 from src.renderizacao.fundo import (
-    EstiloFundo,
     renderizar_fundo_png,
 )
 from src.renderizacao.geometria import (
@@ -29,10 +30,6 @@ from src.renderizacao.modulos import (
 )
 from src.renderizacao.olhos import EstiloOlhos
 from src.renderizacao.olhos_png import renderizar_olhos_png
-from src.renderizacao.preenchimentos import (
-    PreenchimentosOlhos,
-    PreenchimentoVisual,
-)
 from src.renderizacao.resultado import ResultadoRenderizacao
 from src.schemas.personalizacao import Forma
 
@@ -76,52 +73,6 @@ def desenhar_modulo(
             caixa,
             fill=preenchimento,
         )
-
-
-def criar_estilo_convencional(
-    cor_modulos: CorRGBA,
-    cor_fundo: CorRGBA,
-    forma: Forma,
-    olhos: EstiloOlhos | None,
-) -> EstiloRenderizacao:
-    preenchimentos_olhos = None
-
-    if olhos is not None:
-        preenchimentos_olhos = PreenchimentosOlhos(
-            exterior=PreenchimentoVisual(
-                olhos.cor_exterior.como_tuplo(),
-            ),
-            interior=PreenchimentoVisual(
-                olhos.cor_interior.como_tuplo(),
-            ),
-        )
-
-    return EstiloRenderizacao(
-        forma=forma,
-        modulos=PreenchimentoVisual(
-            valor=cor_modulos.como_tuplo(),
-            ambito="global",
-        ),
-        fundo=EstiloFundo(
-            cor=cor_fundo.como_tuplo(),
-        ),
-        olhos=olhos,
-        preenchimentos_olhos=preenchimentos_olhos,
-    )
-
-
-def validar_escala(
-    geometria: GeometriaQR,
-    estilo: EstiloRenderizacao,
-) -> None:
-    olhos = estilo.olhos
-
-    personalizacao_curva = estilo.forma != "square" or (
-        olhos is not None and (olhos.forma_exterior != "square" or olhos.forma_interior != "square")
-    )
-
-    if personalizacao_curva and geometria.escala < ESCALA_MINIMA_PERSONALIZACAO:
-        raise ErroDimensaoQR()
 
 
 def criar_mascara_modulos(

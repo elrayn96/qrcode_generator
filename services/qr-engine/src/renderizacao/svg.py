@@ -1,15 +1,22 @@
 from xml.etree.ElementTree import Element, SubElement, tostring
 
-from src.core.excecoes import ErroDimensaoQR
 from src.motor.matriz import MatrizQR
 from src.renderizacao.cores import BRANCO, PRETO, CorRGBA
-from src.renderizacao.formas import (
-    ESCALA_MINIMA_PERSONALIZACAO,
-    calcular_forma,
+from src.renderizacao.estilos import (
+    EstiloRenderizacao,
+    criar_estilo_convencional,
+    validar_escala,
 )
+from src.renderizacao.formas import calcular_forma
+from src.renderizacao.fundo import renderizar_fundo_svg
 from src.renderizacao.geometria import (
     GeometriaQR,
     calcular_geometria,
+)
+from src.renderizacao.gradientes import GeometriaGradiente
+from src.renderizacao.gradientes_svg import (
+    RegistoGradientesSVG,
+    formatar_numero,
 )
 from src.renderizacao.modulos import (
     ModuloVisual,
@@ -17,27 +24,13 @@ from src.renderizacao.modulos import (
 )
 from src.renderizacao.olhos import (
     EstiloOlhos,
-    RegiaoOlho,
-    calcular_geometria_olhos,
     pertence_a_olho,
 )
+from src.renderizacao.olhos_svg import renderizar_olhos_svg
 from src.renderizacao.resultado import ResultadoRenderizacao
 from src.schemas.personalizacao import Forma
 
 SVG_NS = "http://www.w3.org/2000/svg"
-
-
-def formatar_numero(valor: float) -> str:
-    return f"{valor:.6f}".rstrip("0").rstrip(".")
-
-
-def atributos_cor(cor: CorRGBA) -> dict[str, str]:
-    atributos = {"fill": cor.como_hex()}
-
-    if cor.alfa != 255:
-        atributos["fill-opacity"] = f"{cor.opacidade:.8f}".rstrip("0").rstrip(".")
-
-    return atributos
 
 
 def construir_caminho(
@@ -49,18 +42,19 @@ def construir_caminho(
 
     for linha, valores in enumerate(matriz.modulos):
         coluna = 0
-        _linha, _valores = linha, valores
-        _dimensao_matriz = matriz.dimensao
 
         def desenhavel(
-            c: int, _linha=_linha, _dimensao_matriz=_dimensao_matriz, _valores=_valores
+            c: int,
+            _linha=linha,
+            _valores=valores,
+            _dimensao=matriz.dimensao,
         ) -> bool:
             return _valores[c] != 0 and not (
                 excluir_olhos
                 and pertence_a_olho(
                     _linha,
                     c,
-                    _dimensao_matriz,
+                    _dimensao,
                 )
             )
 
@@ -75,6 +69,7 @@ def construir_caminho(
                 coluna += 1
 
             x = geometria.origem_x + inicio * geometria.escala
+
             y = geometria.origem_y + linha * geometria.escala
 
             largura = (coluna - inicio) * geometria.escala
@@ -114,7 +109,9 @@ def desenhar_modulo_svg(
             {
                 "cx": formatar_numero(geometria.x + geometria.largura / 2),
                 "cy": formatar_numero(geometria.y + geometria.altura / 2),
-                "r": formatar_numero(geometria.raio),
+                "r": formatar_numero(
+                    geometria.raio,
+                ),
             },
         )
 
@@ -128,7 +125,9 @@ def desenhar_modulo_svg(
     }
 
     if modulo.forma == "rounded":
-        atributos["rx"] = formatar_numero(geometria.raio)
+        atributos["rx"] = formatar_numero(
+            geometria.raio,
+        )
 
         atributos["ry"] = atributos["rx"]
 
@@ -144,7 +143,7 @@ def desenhar_modulos_personalizados(
     matriz: MatrizQR,
     geometria: GeometriaQR,
     forma: Forma,
-    cor_modulos: CorRGBA,
+    atributos_preenchimento: dict[str, str],
     excluir_olhos: bool = False,
 ) -> None:
     funcionais = []
@@ -157,7 +156,9 @@ def desenhar_modulos_personalizados(
         excluir_olhos=excluir_olhos,
     ):
         if modulo.funcional:
-            funcionais.append(construir_segmento(modulo))
+            funcionais.append(
+                construir_segmento(modulo),
+            )
         else:
             dados.append(modulo)
 
@@ -167,14 +168,14 @@ def desenhar_modulos_personalizados(
         {
             "d": "".join(funcionais),
             "shape-rendering": "crispEdges",
-            **atributos_cor(cor_modulos),
+            **atributos_preenchimento,
         },
     )
 
     grupo = SubElement(
         raiz,
         "g",
-        atributos_cor(cor_modulos),
+        atributos_preenchimento.copy(),
     )
 
     for modulo in dados:
@@ -182,6 +183,55 @@ def desenhar_modulos_personalizados(
             grupo,
             modulo,
         )
+
+
+def desenhar_modulos_svg(
+    raiz: Element,
+    matriz: MatrizQR,
+    geometria: GeometriaQR,
+    estilo: EstiloRenderizacao,
+    registo: RegistoGradientesSVG,
+    excluir_olhos: bool,
+) -> None:
+    dimensao = geometria.dimensao_matriz * geometria.escala
+
+    geometria_gradiente = GeometriaGradiente(
+        largura=dimensao,
+        altura=dimensao,
+        origem_x=geometria.origem_x,
+        origem_y=geometria.origem_y,
+    )
+
+    atributos = registo.atributos_preenchimento(
+        preenchimento=estilo.modulos.valor,
+        geometria=geometria_gradiente,
+    )
+
+    if estilo.forma == "square":
+        SubElement(
+            raiz,
+            "path",
+            {
+                "d": construir_caminho(
+                    matriz,
+                    geometria,
+                    excluir_olhos=excluir_olhos,
+                ),
+                "shape-rendering": "crispEdges",
+                **atributos,
+            },
+        )
+
+        return
+
+    desenhar_modulos_personalizados(
+        raiz=raiz,
+        matriz=matriz,
+        geometria=geometria,
+        forma=estilo.forma,
+        atributos_preenchimento=atributos,
+        excluir_olhos=excluir_olhos,
+    )
 
 
 def renderizar_svg(
@@ -192,19 +242,28 @@ def renderizar_svg(
     cor_fundo: CorRGBA = BRANCO,
     forma: Forma = "square",
     olhos: EstiloOlhos | None = None,
+    *,
+    estilo: EstiloRenderizacao | None = None,
 ) -> ResultadoRenderizacao:
+    chamada_convencional = estilo is None
+
+    estilo = estilo or criar_estilo_convencional(
+        cor_modulos,
+        cor_fundo,
+        forma,
+        olhos,
+    )
+
     geometria = calcular_geometria(
         dimensao_matriz=matriz.dimensao,
         dimensao_imagem=tamanho,
         margem=margem,
     )
 
-    personalizacao_curva = forma != "square" or (
-        olhos is not None and (olhos.forma_exterior != "square" or olhos.forma_interior != "square")
+    validar_escala(
+        geometria,
+        estilo,
     )
-
-    if personalizacao_curva and geometria.escala < ESCALA_MINIMA_PERSONALIZACAO:
-        raise ErroDimensaoQR()
 
     raiz = Element(
         "svg",
@@ -216,49 +275,35 @@ def renderizar_svg(
         },
     )
 
-    if cor_fundo.alfa > 0:
-        SubElement(
-            raiz,
-            "rect",
-            {
-                "x": "0",
-                "y": "0",
-                "width": str(tamanho),
-                "height": str(tamanho),
-                **atributos_cor(cor_fundo),
-            },
-        )
+    registo = RegistoGradientesSVG(raiz)
 
-    if forma == "square":
-        SubElement(
-            raiz,
-            "path",
-            {
-                "d": construir_caminho(
-                    matriz,
-                    geometria,
-                    excluir_olhos=olhos is not None,
-                ),
-                "shape-rendering": "crispEdges",
-                **atributos_cor(cor_modulos),
-            },
-        )
+    renderizar_fundo_svg(
+        raiz=raiz,
+        largura=tamanho,
+        altura=tamanho,
+        estilo=estilo.fundo,
+        registo=registo,
+    )
 
-    else:
-        desenhar_modulos_personalizados(
-            raiz,
-            matriz,
-            geometria,
-            forma,
-            cor_modulos,
-            excluir_olhos=olhos is not None,
-        )
+    # Preserva a estrutura das chamadas antigas.
+    excluir_olhos = olhos is not None if chamada_convencional else estilo.requer_olhos_independentes
 
-    if olhos is not None:
-        desenhar_olhos_svg(
-            raiz,
-            geometria,
-            olhos,
+    desenhar_modulos_svg(
+        raiz=raiz,
+        matriz=matriz,
+        geometria=geometria,
+        estilo=estilo,
+        registo=registo,
+        excluir_olhos=excluir_olhos,
+    )
+
+    if excluir_olhos and estilo.olhos is not None and estilo.preenchimentos_olhos is not None:
+        renderizar_olhos_svg(
+            raiz=raiz,
+            geometria=geometria,
+            estilo=estilo.olhos,
+            preenchimentos=estilo.preenchimentos_olhos,
+            registo=registo,
         )
 
     dados = tostring(
@@ -273,74 +318,3 @@ def renderizar_svg(
         largura=tamanho,
         altura=tamanho,
     )
-
-
-def construir_caminho_regiao(
-    regiao: RegiaoOlho,
-) -> str:
-    x = regiao.x
-    y = regiao.y
-    d = regiao.dimensao
-    r = regiao.raio
-
-    if r == 0:
-        return f"M{x} {y}h{d}v{d}h{-d}z"
-
-    p = formatar_numero
-
-    return (
-        f"M{p(x + r)} {p(y)}"
-        f"H{p(x + d - r)}"
-        f"A{p(r)} {p(r)} 0 0 1 "
-        f"{p(x + d)} {p(y + r)}"
-        f"V{p(y + d - r)}"
-        f"A{p(r)} {p(r)} 0 0 1 "
-        f"{p(x + d - r)} {p(y + d)}"
-        f"H{p(x + r)}"
-        f"A{p(r)} {p(r)} 0 0 1 "
-        f"{p(x)} {p(y + d - r)}"
-        f"V{p(y + r)}"
-        f"A{p(r)} {p(r)} 0 0 1 "
-        f"{p(x + r)} {p(y)}z"
-    )
-
-
-def desenhar_olhos_svg(
-    raiz: Element,
-    geometria: GeometriaQR,
-    estilo: EstiloOlhos,
-) -> None:
-    grupo = SubElement(
-        raiz,
-        "g",
-        {"id": "qr-eyes"},
-    )
-
-    for olho in calcular_geometria_olhos(
-        geometria,
-        estilo,
-    ):
-        exterior = construir_caminho_regiao(olho.exterior)
-
-        abertura = construir_caminho_regiao(olho.abertura)
-
-        interior = construir_caminho_regiao(olho.interior)
-
-        SubElement(
-            grupo,
-            "path",
-            {
-                "d": exterior + abertura,
-                "fill-rule": "evenodd",
-                **atributos_cor(estilo.cor_exterior),
-            },
-        )
-
-        SubElement(
-            grupo,
-            "path",
-            {
-                "d": interior,
-                **atributos_cor(estilo.cor_interior),
-            },
-        )

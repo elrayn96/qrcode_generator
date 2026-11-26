@@ -1,8 +1,12 @@
 from dataclasses import dataclass
 
-from src.core.excecoes import ErroDadosInvalidos
-from src.renderizacao.cores import PRETO, converter_cor
+from src.core.excecoes import ErroDadosInvalidos, ErroDimensaoQR
+from src.renderizacao.cores import PRETO, CorRGBA, converter_cor
+from src.renderizacao.formas import (
+    ESCALA_MINIMA_PERSONALIZACAO,
+)
 from src.renderizacao.fundo import EstiloFundo
+from src.renderizacao.geometria import GeometriaQR
 from src.renderizacao.gradientes import Gradiente, PontoCor
 from src.renderizacao.olhos import EstiloOlhos
 from src.renderizacao.preenchimentos import (
@@ -197,3 +201,50 @@ def resolver_estilo(
         olhos=olhos,
         preenchimentos_olhos=preenchimentos_olhos,
     )
+
+
+def criar_estilo_convencional(
+    cor_modulos: CorRGBA,
+    cor_fundo: CorRGBA,
+    forma: Forma,
+    olhos: EstiloOlhos | None,
+) -> EstiloRenderizacao:
+    preenchimentos_olhos = None
+
+    if olhos is not None:
+        preenchimentos_olhos = PreenchimentosOlhos(
+            exterior=PreenchimentoVisual(
+                olhos.cor_exterior.como_tuplo(),
+            ),
+            interior=PreenchimentoVisual(
+                olhos.cor_interior.como_tuplo(),
+            ),
+        )
+
+    return EstiloRenderizacao(
+        forma=forma,
+        modulos=PreenchimentoVisual(
+            valor=cor_modulos.como_tuplo(),
+            ambito="global",
+        ),
+        fundo=EstiloFundo(
+            cor=cor_fundo.como_tuplo(),
+            transparente=cor_fundo.alfa == 0,
+        ),
+        olhos=olhos,
+        preenchimentos_olhos=preenchimentos_olhos,
+    )
+
+
+def validar_escala(
+    geometria: GeometriaQR,
+    estilo: EstiloRenderizacao,
+) -> None:
+    olhos = estilo.olhos
+
+    personalizacao_curva = estilo.forma != "square" or (
+        olhos is not None and (olhos.forma_exterior != "square" or olhos.forma_interior != "square")
+    )
+
+    if personalizacao_curva and geometria.escala < ESCALA_MINIMA_PERSONALIZACAO:
+        raise ErroDimensaoQR()
