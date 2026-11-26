@@ -167,6 +167,9 @@ def criar_gradiente_radial_centrado(
     altura: int,
     paleta: tuple[bytes, ...],
     geometria: GeometriaGradiente,
+    *,
+    origem_x: int = 0,
+    origem_y: int = 0,
 ) -> Image.Image:
     cx, cy = geometria.centro
     raio = geometria.raio
@@ -174,13 +177,22 @@ def criar_gradiente_radial_centrado(
     metade_largura = (largura + 1) // 2
     metade_altura = (altura + 1) // 2
 
-    distancias_x = tuple(x + 0.5 - cx for x in range(metade_largura))
+    distancias_x = tuple(
+        x + 0.5 - cx
+        for x in range(
+            origem_x,
+            origem_x + metade_largura,
+        )
+    )
 
     indice = obter_indice
 
     linhas = []
 
-    for y in range(metade_altura):
+    for y in range(
+        origem_y,
+        origem_y + metade_altura,
+    ):
         dy = y + 0.5 - cy
 
         metade = [paleta[indice(hypot(dx, dy) / raio)] for dx in distancias_x]
@@ -216,12 +228,19 @@ def criar_gradiente_radial(
 
     cx, cy = geometria.centro
 
-    if origem_x == 0 and origem_y == 0 and cx == largura / 2 and cy == altura / 2:
+    centro_regiao_x = origem_x + largura / 2
+    centro_regiao_y = origem_y + altura / 2
+
+    # A simetria é válida sempre que o centro
+    # da região coincide com o do gradiente.
+    if cx == centro_regiao_x and cy == centro_regiao_y:
         return criar_gradiente_radial_centrado(
             largura,
             altura,
             paleta,
             geometria,
+            origem_x=origem_x,
+            origem_y=origem_y,
         )
 
     raio = geometria.raio

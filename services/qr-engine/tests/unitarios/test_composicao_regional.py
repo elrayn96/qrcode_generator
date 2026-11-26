@@ -5,6 +5,7 @@ from PIL import Image, ImageChops
 from src.core.excecoes import ErroDadosInvalidos
 from src.renderizacao.composicao import (
     aplicar_preenchimento,
+    criar_gradiente_radial_centrado,
     criar_preenchimento,
     criar_preenchimento_regional,
 )
@@ -363,4 +364,121 @@ def test_gradiente_cardinal_regional(
             caixa,
         ) as regional,
     ):
+        assert regional.tobytes() == esperado.tobytes()
+
+
+@pytest.mark.parametrize(
+    ("largura", "altura", "caixa"),
+    [
+        (64, 64, (8, 8, 56, 56)),
+        (64, 64, (16, 16, 48, 48)),
+        (64, 64, (24, 24, 40, 40)),
+        (63, 63, (8, 8, 55, 55)),
+        (63, 63, (16, 16, 47, 47)),
+        (64, 63, (8, 8, 56, 55)),
+        (63, 64, (8, 8, 55, 56)),
+        (64, 32, (8, 4, 56, 28)),
+        (63, 63, (31, 31, 32, 32)),
+    ],
+)
+def test_radial_regional_com_simetria(
+    largura,
+    altura,
+    caixa,
+):
+    gradiente = criar_gradiente("radial")
+
+    with (
+        criar_preenchimento(
+            largura,
+            altura,
+            gradiente,
+        ) as completa,
+        completa.crop(caixa) as esperado,
+        patch(
+            "src.renderizacao.composicao.criar_gradiente_radial_centrado",
+            wraps=criar_gradiente_radial_centrado,
+        ) as centrado,
+        criar_preenchimento_regional(
+            largura,
+            altura,
+            gradiente,
+            caixa,
+        ) as regional,
+    ):
+        centrado.assert_called_once()
+
+        assert regional.tobytes() == esperado.tobytes()
+
+
+@pytest.mark.parametrize(
+    "caixa",
+    [
+        (0, 0, 32, 32),
+        (8, 10, 56, 56),
+        (10, 8, 56, 56),
+        (16, 16, 64, 64),
+    ],
+)
+def test_radial_regional_descentrado(
+    caixa,
+):
+    gradiente = criar_gradiente("radial")
+
+    with (
+        criar_preenchimento(
+            64,
+            64,
+            gradiente,
+        ) as completa,
+        completa.crop(caixa) as esperado,
+        patch(
+            "src.renderizacao.composicao.criar_gradiente_radial_centrado",
+        ) as centrado,
+        criar_preenchimento_regional(
+            64,
+            64,
+            gradiente,
+            caixa,
+        ) as regional,
+    ):
+        centrado.assert_not_called()
+
+        assert regional.tobytes() == esperado.tobytes()
+
+
+def test_radial_regional_geometria_deslocada_centrada():
+    gradiente = criar_gradiente("radial")
+
+    geometria = GeometriaGradiente(
+        largura=32,
+        altura=32,
+        origem_x=8,
+        origem_y=12,
+    )
+
+    caixa = (8, 12, 40, 44)
+
+    with (
+        criar_preenchimento(
+            64,
+            64,
+            gradiente,
+            geometria,
+        ) as completa,
+        completa.crop(caixa) as esperado,
+        patch(
+            "src.renderizacao.composicao.criar_gradiente_radial_centrado",
+            wraps=criar_gradiente_radial_centrado,
+        ) as centrado,
+        criar_preenchimento_regional(
+            64,
+            64,
+            gradiente,
+            caixa,
+            geometria,
+        ) as regional,
+    ):
+        centrado.assert_called_once()
+
         assert regional.tobytes() == esperado.tobytes()
