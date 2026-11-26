@@ -120,14 +120,26 @@ def test_forma_padrao_preservada(formato):
     assert renderizar(padrao).dados == renderizar(explicito).dados
 
 
-def test_gradiente_ainda_nao_suportado():
+@pytest.mark.parametrize(
+    "formato",
+    ["png", "svg"],
+)
+@pytest.mark.parametrize(
+    "tipo",
+    ["linear", "radial"],
+)
+def test_gradiente_suportado(formato, tipo):
     pedido = PedidoRenderizacao.model_validate(
         {
             "content": "ntizoconnect",
+            "output": {
+                "format": formato,
+                "size": 512,
+            },
             "style": {
                 "modules": {
                     "gradient": {
-                        "type": "linear",
+                        "type": tipo,
                         "stops": [
                             {
                                 "position": 0.0,
@@ -144,8 +156,35 @@ def test_gradiente_ainda_nao_suportado():
         }
     )
 
-    with pytest.raises(ErroDadosInvalidos):
-        renderizar(pedido)
+    resultado = renderizar(pedido)
+
+    convencional = renderizar(
+        PedidoRenderizacao.model_validate(
+            {
+                "content": pedido.content,
+                "output": {
+                    "format": formato,
+                    "size": 512,
+                },
+            }
+        )
+    )
+
+    assert resultado.largura == 512
+    assert resultado.altura == 512
+    assert resultado.tamanho_bytes > 0
+    assert resultado.dados != convencional.dados
+
+    if formato == "png":
+        assert resultado.media_type == "image/png"
+        assert resultado.dados.startswith(b"\x89PNG\r\n\x1a\n")
+    else:
+        assert resultado.media_type == "image/svg+xml"
+
+        elemento = b"linearGradient" if tipo == "linear" else b"radialGradient"
+
+        assert elemento in resultado.dados
+        assert b"url(#" in resultado.dados
 
 
 def test_rejeitar_modulos_translucidos():
