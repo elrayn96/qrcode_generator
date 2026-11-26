@@ -60,10 +60,15 @@ def criar_gradiente_linear(
     altura: int,
     gradiente: Gradiente,
     geometria: GeometriaGradiente,
+    *,
+    origem_x: int = 0,
+    origem_y: int = 0,
 ) -> Image.Image:
     paleta = criar_paleta_bytes(gradiente)
 
-    x1, y1, x2, y2 = geometria.extremos_lineares(gradiente.angulo)
+    x1, y1, x2, y2 = geometria.extremos_lineares(
+        gradiente.angulo,
+    )
 
     dx = x2 - x1
     dy = y2 - y1
@@ -75,38 +80,80 @@ def criar_gradiente_linear(
 
     inicio = ((0.5 - x1) * dx + (0.5 - y1) * dy) / denominador
 
-    # O deslocamento horizontal é independente
-    # da linha que está a ser processada.
-    deslocamentos_x = tuple(x * passo_x for x in range(largura))
+    deslocamentos_x = tuple(
+        x * passo_x
+        for x in range(
+            origem_x,
+            origem_x + largura,
+        )
+    )
+
+    posicoes_y = tuple(
+        inicio + y * passo_y
+        for y in range(
+            origem_y,
+            origem_y + altura,
+        )
+    )
 
     indice = obter_indice
 
-    # Gradiente estritamente horizontal:
-    # todas as linhas possuem as mesmas cores.
-    if passo_y == 0.0:
-        linha = b"".join(paleta[indice(inicio + deslocamento)] for deslocamento in deslocamentos_x)
+    # Verificar se todas as colunas mantêm
+    # o mesmo índice entre a primeira e a
+    # última linha.
+    if abs(passo_y) <= abs(passo_x):
+        primeira = posicoes_y[0]
+        ultima = posicoes_y[-1]
 
-        dados = linha * altura
+        indices = tuple(indice(primeira + deslocamento) for deslocamento in deslocamentos_x)
 
-    # Gradiente estritamente vertical:
-    # todos os pixels de cada linha são iguais.
-    elif passo_x == 0.0:
-        dados = b"".join(paleta[indice(inicio + y * passo_y)] * largura for y in range(altura))
+        if all(
+            actual == indice(ultima + deslocamento)
+            for actual, deslocamento in zip(
+                indices,
+                deslocamentos_x,
+                strict=True,
+            )
+        ):
+            linha = b"".join(paleta[actual] for actual in indices)
 
-    # Gradiente com orientação arbitrária.
-    else:
-        linhas = []
-
-        for y in range(altura):
-            posicao = inicio + y * passo_y
-
-            linha = b"".join(
-                paleta[indice(posicao + deslocamento)] for deslocamento in deslocamentos_x
+            return Image.frombytes(
+                "RGBA",
+                (largura, altura),
+                linha * altura,
             )
 
-            linhas.append(linha)
+    # Verificar se todas as linhas mantêm
+    # o mesmo índice entre o primeiro e o
+    # último pixel.
+    else:
+        primeiro = deslocamentos_x[0]
+        ultimo = deslocamentos_x[-1]
 
-        dados = b"".join(linhas)
+        indices = tuple(indice(posicao + primeiro) for posicao in posicoes_y)
+
+        if all(
+            actual == indice(posicao + ultimo)
+            for actual, posicao in zip(
+                indices,
+                posicoes_y,
+                strict=True,
+            )
+        ):
+            dados = b"".join(paleta[actual] * largura for actual in indices)
+
+            return Image.frombytes(
+                "RGBA",
+                (largura, altura),
+                dados,
+            )
+
+    # Caso geral: preservar o cálculo
+    # original de cada pixel.
+    dados = b"".join(
+        b"".join(paleta[indice(posicao + deslocamento)] for deslocamento in deslocamentos_x)
+        for posicao in posicoes_y
+    )
 
     return Image.frombytes(
         "RGBA",
@@ -161,14 +208,15 @@ def criar_gradiente_radial(
     altura: int,
     gradiente: Gradiente,
     geometria: GeometriaGradiente,
+    *,
+    origem_x: int = 0,
+    origem_y: int = 0,
 ) -> Image.Image:
     paleta = criar_paleta_bytes(gradiente)
 
     cx, cy = geometria.centro
 
-    # A reflexão só é válida quando o centro
-    # do gradiente coincide com o da imagem.
-    if cx == largura / 2 and cy == altura / 2:
+    if origem_x == 0 and origem_y == 0 and cx == largura / 2 and cy == altura / 2:
         return criar_gradiente_radial_centrado(
             largura,
             altura,
@@ -178,13 +226,22 @@ def criar_gradiente_radial(
 
     raio = geometria.raio
 
-    distancias_x = tuple(x + 0.5 - cx for x in range(largura))
+    distancias_x = tuple(
+        x + 0.5 - cx
+        for x in range(
+            origem_x,
+            origem_x + largura,
+        )
+    )
 
     indice = obter_indice
 
     linhas = []
 
-    for y in range(altura):
+    for y in range(
+        origem_y,
+        origem_y + altura,
+    ):
         dy = y + 0.5 - cy
 
         linha = b"".join(paleta[indice(hypot(dx, dy) / raio)] for dx in distancias_x)
@@ -228,6 +285,47 @@ def criar_preenchimento(
     )
 
 
+def criar_preenchimento_regional(
+    largura: int,
+    altura: int,
+    preenchimento: Preenchimento,
+    caixa: tuple[int, int, int, int],
+    geometria: GeometriaGradiente | None = None,
+) -> Image.Image:
+    validar_dimensoes(largura, altura)
+
+    x0, y0, x1, y1 = caixa
+
+    if not (0 <= x0 < x1 <= largura and 0 <= y0 < y1 <= altura):
+        raise ErroDadosInvalidos()
+
+    largura_regiao = x1 - x0
+    altura_regiao = y1 - y0
+
+    if not isinstance(preenchimento, Gradiente):
+        return Image.new(
+            "RGBA",
+            (largura_regiao, altura_regiao),
+            preenchimento,
+        )
+
+    geometria = geometria or GeometriaGradiente(
+        largura=largura,
+        altura=altura,
+    )
+
+    gerador = criar_gradiente_linear if preenchimento.tipo == "linear" else criar_gradiente_radial
+
+    return gerador(
+        largura_regiao,
+        altura_regiao,
+        preenchimento,
+        geometria,
+        origem_x=x0,
+        origem_y=y0,
+    )
+
+
 def aplicar_preenchimento(
     imagem: Image.Image,
     mascara: Image.Image,
@@ -245,19 +343,60 @@ def aplicar_preenchimento(
 
     largura, altura = imagem.size
 
-    with criar_preenchimento(
-        largura,
-        altura,
-        preenchimento,
-        geometria,
-    ) as camada:
+    validar_dimensoes(largura, altura)
+
+    caixa = mascara.getbbox()
+
+    # Uma máscara totalmente vazia não
+    # altera nenhum pixel da imagem.
+    if caixa is None:
+        return
+
+    x0, y0, x1, y1 = caixa
+
+    # Evitar o recorte quando a máscara
+    # ocupa toda a imagem.
+    if caixa == (0, 0, largura, altura):
+        with criar_preenchimento(
+            largura,
+            altura,
+            preenchimento,
+            geometria,
+        ) as camada:
+            with (
+                camada.getchannel("A") as alfa,
+                ImageChops.multiply(
+                    alfa,
+                    mascara,
+                ) as alfa_final,
+            ):
+                camada.putalpha(alfa_final)
+
+            imagem.alpha_composite(camada)
+
+        return
+
+    # Gerar apenas a região utilizada.
+    with (
+        mascara.crop(caixa) as mascara_regional,
+        criar_preenchimento_regional(
+            largura,
+            altura,
+            preenchimento,
+            (x0, y0, x1, y1),
+            geometria,
+        ) as camada,
+    ):
         with (
             camada.getchannel("A") as alfa,
             ImageChops.multiply(
                 alfa,
-                mascara,
+                mascara_regional,
             ) as alfa_final,
         ):
             camada.putalpha(alfa_final)
 
-        imagem.alpha_composite(camada)
+        imagem.alpha_composite(
+            camada,
+            dest=(x0, y0),
+        )
