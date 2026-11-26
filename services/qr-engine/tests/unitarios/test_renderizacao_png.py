@@ -75,7 +75,7 @@ def test_apenas_duas_cores():
     resultado = renderizar_png(gerar_matriz("ntizoconnect"))
 
     with Image.open(BytesIO(resultado.dados)) as imagem:
-        cores = set(imagem.getdata())
+        cores = set(imagem.get_flattened_data())
 
     assert cores == {
         (0, 0, 0, 255),
@@ -104,7 +104,7 @@ def test_correspondencia_integral_matriz_png():
                 esperado = (0, 0, 0, 255) if valor == 1 else (255, 255, 255, 255)
 
                 with imagem.crop(caixa) as modulo:
-                    assert set(modulo.getdata()) == {esperado}
+                    assert set(modulo.get_flattened_data()) == {esperado}
 
 
 def test_png_deterministico():
@@ -185,7 +185,7 @@ def test_padroes_funcionais_png(forma):
             )
 
             with imagem.crop(caixa) as regiao:
-                assert set(regiao.getdata()) == {(0, 0, 0, 255)}
+                assert set(regiao.get_flattened_data()) == {(0, 0, 0, 255)}
 
 
 @pytest.mark.parametrize(

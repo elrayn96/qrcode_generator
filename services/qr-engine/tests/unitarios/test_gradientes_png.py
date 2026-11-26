@@ -67,7 +67,7 @@ def test_gradientes_modulos_png(tipo, forma):
         assert imagem.mode == "RGBA"
         assert imagem.size == (512, 512)
 
-        cores = set(imagem.getdata())
+        cores = set(imagem.get_flattened_data())
 
         assert len(cores) > 2
         assert imagem.getpixel((0, 0)) == (255, 255, 255, 255)
