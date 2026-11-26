@@ -56,7 +56,7 @@ def test_conteudo_invalido(conteudo):
 def test_dimensoes_validas(tamanho):
     pedido = PedidoRenderizacao.model_validate(
         {
-            "content": "example",
+            "content": "ntizoconnect",
             "output": {"size": tamanho},
         }
     )
@@ -72,7 +72,7 @@ def test_dimensoes_invalidas(tamanho):
     with pytest.raises(ValidationError):
         PedidoRenderizacao.model_validate(
             {
-                "content": "example",
+                "content": "ntizoconnect",
                 "output": {"size": tamanho},
             }
         )
@@ -83,7 +83,7 @@ def test_margens_invalidas(margem):
     with pytest.raises(ValidationError):
         PedidoRenderizacao.model_validate(
             {
-                "content": "example",
+                "content": "ntizoconnect",
                 "output": {"margin": margem},
             }
         )
@@ -97,7 +97,7 @@ def test_formatos_invalidos(formato):
     with pytest.raises(ValidationError):
         PedidoRenderizacao.model_validate(
             {
-                "content": "example",
+                "content": "ntizoconnect",
                 "output": {"format": formato},
             }
         )
@@ -107,7 +107,7 @@ def test_formatos_invalidos(formato):
 def test_correcao_erros(nivel):
     pedido = PedidoRenderizacao.model_validate(
         {
-            "content": "example",
+            "content": "ntizoconnect",
             "options": {"errorCorrection": nivel},
         }
     )
@@ -119,7 +119,7 @@ def test_correcao_erro_invalida():
     with pytest.raises(ValidationError):
         PedidoRenderizacao.model_validate(
             {
-                "content": "example",
+                "content": "ntizoconnect",
                 "options": {"errorCorrection": "X"},
             }
         )

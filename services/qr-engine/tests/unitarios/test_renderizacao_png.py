@@ -16,7 +16,7 @@ from src.renderizacao.png import renderizar_png
 
 
 def test_assinatura_png():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     resultado = renderizar_png(matriz)
 
@@ -27,7 +27,7 @@ def test_assinatura_png():
 
 @pytest.mark.parametrize("tamanho", [128, 512, 1024, 2048])
 def test_dimensao_png(tamanho):
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     resultado = renderizar_png(
         matriz,
@@ -42,7 +42,7 @@ def test_dimensao_png(tamanho):
 
 
 def test_cor_modulo():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(
         matriz.dimensao,
@@ -62,7 +62,7 @@ def test_cor_modulo():
 
 def test_fundo_transparente():
     resultado = renderizar_png(
-        gerar_matriz("example"),
+        gerar_matriz("ntizoconnect"),
         cor_fundo=TRANSPARENTE,
     )
 
@@ -72,7 +72,7 @@ def test_fundo_transparente():
 
 
 def test_apenas_duas_cores():
-    resultado = renderizar_png(gerar_matriz("example"))
+    resultado = renderizar_png(gerar_matriz("ntizoconnect"))
 
     with Image.open(BytesIO(resultado.dados)) as imagem:
         cores = set(imagem.getdata())
@@ -84,7 +84,7 @@ def test_apenas_duas_cores():
 
 
 def test_correspondencia_integral_matriz_png():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(
         matriz.dimensao,
@@ -108,7 +108,7 @@ def test_correspondencia_integral_matriz_png():
 
 
 def test_png_deterministico():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     primeira = renderizar_png(matriz)
     segunda = renderizar_png(matriz)
@@ -122,7 +122,7 @@ def test_png_deterministico():
 )
 def test_renderizar_formas_png(forma):
     resultado = renderizar_png(
-        gerar_matriz("example"),
+        gerar_matriz("ntizoconnect"),
         forma=forma,
     )
 
@@ -138,7 +138,7 @@ def test_renderizar_formas_png(forma):
     ["rounded", "dots"],
 )
 def test_forma_altera_imagem_png(forma):
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     quadrado = renderizar_png(
         matriz,
@@ -158,7 +158,7 @@ def test_forma_altera_imagem_png(forma):
     ["rounded", "dots"],
 )
 def test_padroes_funcionais_png(forma):
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(
         matriz.dimensao,
@@ -193,7 +193,7 @@ def test_padroes_funcionais_png(forma):
     ["rounded", "dots"],
 )
 def test_escala_insuficiente_png(forma):
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     with pytest.raises(ErroDimensaoQR):
         renderizar_png(
@@ -209,7 +209,7 @@ def test_escala_insuficiente_png(forma):
     ["rounded", "dots"],
 )
 def test_centro_modulos_dados_png(forma):
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(
         matriz.dimensao,
@@ -249,7 +249,7 @@ def test_formas_olhos_png(exterior, interior):
     )
 
     resultado = renderizar_png(
-        gerar_matriz("example"),
+        gerar_matriz("ntizoconnect"),
         olhos=estilo,
     )
 
@@ -259,7 +259,7 @@ def test_formas_olhos_png(exterior, interior):
 
 
 def test_cores_independentes_olhos_png():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(matriz.dimensao, 512)
 
@@ -289,7 +289,7 @@ def test_cores_independentes_olhos_png():
 
 
 def test_abertura_transparente_olhos_png():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(matriz.dimensao, 512)
 
@@ -318,7 +318,7 @@ def test_abertura_transparente_olhos_png():
 
 
 def test_olhos_padrao_preservam_imagem_png():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     convencional = renderizar_png(matriz)
 

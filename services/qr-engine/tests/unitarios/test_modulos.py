@@ -55,7 +55,7 @@ def test_padroes_funcionais_preservados(forma):
     ["square", "rounded", "dots"],
 )
 def test_personalizacao_modulos_dados(forma):
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(
         matriz.dimensao,
@@ -78,7 +78,7 @@ def test_personalizacao_modulos_dados(forma):
 
 
 def test_quantidade_modulos_preservada():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(
         matriz.dimensao,
@@ -97,7 +97,7 @@ def test_quantidade_modulos_preservada():
 
 
 def test_modulos_claros_nao_desenhados():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(
         matriz.dimensao,
@@ -115,7 +115,7 @@ def test_modulos_claros_nao_desenhados():
 
 
 def test_coordenadas_modulos():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(
         matriz.dimensao,
@@ -156,7 +156,7 @@ def test_matriz_densa_preserva_padroes_funcionais():
 
 
 def test_excluir_olhos_dos_modulos():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(matriz.dimensao, 512)
 
@@ -183,7 +183,7 @@ def test_excluir_olhos_dos_modulos():
 
 
 def test_exclusao_olhos_preserva_outros_modulos():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(matriz.dimensao, 512)
 

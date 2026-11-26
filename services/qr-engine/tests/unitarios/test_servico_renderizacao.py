@@ -27,7 +27,7 @@ def test_renderizacao_por_formato(formato, media_type):
 
 
 def test_renderizacao_padrao():
-    pedido = PedidoRenderizacao(content="example")
+    pedido = PedidoRenderizacao(content="ntizoconnect")
 
     resultado = renderizar(pedido)
 
@@ -38,7 +38,7 @@ def test_renderizacao_padrao():
 def test_renderizacao_personalizada():
     pedido = PedidoRenderizacao.model_validate(
         {
-            "content": "example",
+            "content": "ntizoconnect",
             "output": {
                 "format": "svg",
                 "size": 1024,
@@ -100,14 +100,14 @@ def test_renderizacao_formas(forma, formato):
 def test_forma_padrao_preservada(formato):
     padrao = PedidoRenderizacao.model_validate(
         {
-            "content": "example",
+            "content": "ntizoconnect",
             "output": {"format": formato},
         }
     )
 
     explicito = PedidoRenderizacao.model_validate(
         {
-            "content": "example",
+            "content": "ntizoconnect",
             "output": {"format": formato},
             "style": {
                 "modules": {
@@ -123,7 +123,7 @@ def test_forma_padrao_preservada(formato):
 def test_gradiente_ainda_nao_suportado():
     pedido = PedidoRenderizacao.model_validate(
         {
-            "content": "example",
+            "content": "ntizoconnect",
             "style": {
                 "modules": {
                     "gradient": {
@@ -151,7 +151,7 @@ def test_gradiente_ainda_nao_suportado():
 def test_rejeitar_modulos_translucidos():
     pedido = PedidoRenderizacao.model_validate(
         {
-            "content": "example",
+            "content": "ntizoconnect",
             "style": {
                 "modules": {"color": "#00000080"},
             },
@@ -163,7 +163,7 @@ def test_rejeitar_modulos_translucidos():
 
 
 def test_resultado_nao_expoe_bytes():
-    resultado = renderizar(PedidoRenderizacao(content="example"))
+    resultado = renderizar(PedidoRenderizacao(content="ntizoconnect"))
 
     assert "dados=" not in repr(resultado)
 
@@ -208,7 +208,7 @@ def test_personalizacao_olhos(
 def test_olhos_herdam_cor_modulos():
     pedido = PedidoRenderizacao.model_validate(
         {
-            "content": "example",
+            "content": "ntizoconnect",
             "output": {"format": "svg"},
             "style": {
                 "modules": {

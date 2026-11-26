@@ -7,15 +7,15 @@ from src.schemas.personalizacao import Logotipo
 @pytest.mark.parametrize(
     "dados",
     [
-        {"content": "example", "admin": True},
-        {"content": "example", "role": "admin"},
-        {"content": "example", "quota": -1},
+        {"content": "ntizoconnect", "admin": True},
+        {"content": "ntizoconnect", "role": "admin"},
+        {"content": "ntizoconnect", "quota": -1},
         {
-            "content": "example",
+            "content": "ntizoconnect",
             "output": {"workers": 999},
         },
         {
-            "content": "example",
+            "content": "ntizoconnect",
             "style": {"unknown": True},
         },
     ],
@@ -29,11 +29,11 @@ def test_campos_desconhecidos(dados):
     "dados",
     [
         {"content": None},
-        {"content": "example", "output": None},
-        {"content": "example", "options": None},
-        {"content": "example", "style": None},
+        {"content": "ntizoconnect", "output": None},
+        {"content": "ntizoconnect", "options": None},
+        {"content": "ntizoconnect", "style": None},
         {
-            "content": "example",
+            "content": "ntizoconnect",
             "style": {"modules": None},
         },
     ],
@@ -47,7 +47,7 @@ def test_booleano_nao_aceite_como_inteiro():
     with pytest.raises(ValidationError):
         PedidoRenderizacao.model_validate(
             {
-                "content": "example",
+                "content": "ntizoconnect",
                 "output": {"size": True},
             }
         )
@@ -57,7 +57,7 @@ def test_string_nao_aceite_como_booleano():
     with pytest.raises(ValidationError):
         PedidoRenderizacao.model_validate(
             {
-                "content": "example",
+                "content": "ntizoconnect",
                 "style": {
                     "background": {
                         "transparent": "true",
@@ -90,7 +90,7 @@ def test_erro_nao_expoe_valor_original():
     with pytest.raises(ValidationError) as erro:
         PedidoRenderizacao.model_validate(
             {
-                "content": "example",
+                "content": "ntizoconnect",
                 "output": {"size": segredo},
             }
         )

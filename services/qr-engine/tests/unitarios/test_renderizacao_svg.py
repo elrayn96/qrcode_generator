@@ -19,7 +19,7 @@ from src.renderizacao.svg import (
 
 
 def test_documento_svg_valido():
-    resultado = renderizar_svg(gerar_matriz("example"))
+    resultado = renderizar_svg(gerar_matriz("ntizoconnect"))
 
     raiz = fromstring(resultado.dados)
 
@@ -30,7 +30,7 @@ def test_documento_svg_valido():
 @pytest.mark.parametrize("tamanho", [128, 512, 1024, 2048])
 def test_dimensao_svg(tamanho):
     resultado = renderizar_svg(
-        gerar_matriz("example"),
+        gerar_matriz("ntizoconnect"),
         tamanho=tamanho,
     )
 
@@ -44,7 +44,7 @@ def test_dimensao_svg(tamanho):
 
 def test_cor_modulos_svg():
     resultado = renderizar_svg(
-        gerar_matriz("example"),
+        gerar_matriz("ntizoconnect"),
         cor_modulos=converter_cor("#7C3AED"),
     )
 
@@ -57,7 +57,7 @@ def test_cor_modulos_svg():
 
 def test_fundo_transparente_svg():
     resultado = renderizar_svg(
-        gerar_matriz("example"),
+        gerar_matriz("ntizoconnect"),
         cor_fundo=TRANSPARENTE,
     )
 
@@ -68,7 +68,7 @@ def test_fundo_transparente_svg():
 
 def test_opacidade_fundo_svg():
     resultado = renderizar_svg(
-        gerar_matriz("example"),
+        gerar_matriz("ntizoconnect"),
         cor_fundo=converter_cor("#FFFFFF80"),
     )
 
@@ -81,7 +81,7 @@ def test_opacidade_fundo_svg():
 
 
 def test_apenas_elementos_permitidos():
-    matriz = gerar_matriz("<script>alert('example')</script>")
+    matriz = gerar_matriz("<script>alert('ntizoconnect')</script>")
 
     resultado = renderizar_svg(matriz)
     raiz = fromstring(resultado.dados)
@@ -95,7 +95,7 @@ def test_apenas_elementos_permitidos():
 
 
 def test_correspondencia_matriz_svg():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(
         matriz.dimensao,
@@ -137,7 +137,7 @@ def test_correspondencia_matriz_svg():
 
 
 def test_svg_deterministico():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     assert renderizar_svg(matriz).dados == renderizar_svg(matriz).dados
 
@@ -148,7 +148,7 @@ def test_svg_deterministico():
 )
 def test_renderizar_formas_svg(forma):
     resultado = renderizar_svg(
-        gerar_matriz("example"),
+        gerar_matriz("ntizoconnect"),
         forma=forma,
     )
 
@@ -159,7 +159,7 @@ def test_renderizar_formas_svg(forma):
 
 def test_modulos_arredondados_svg():
     resultado = renderizar_svg(
-        gerar_matriz("example"),
+        gerar_matriz("ntizoconnect"),
         forma="rounded",
     )
 
@@ -178,7 +178,7 @@ def test_modulos_arredondados_svg():
 
 def test_modulos_circulares_svg():
     resultado = renderizar_svg(
-        gerar_matriz("example"),
+        gerar_matriz("ntizoconnect"),
         forma="dots",
     )
 
@@ -196,7 +196,7 @@ def test_modulos_circulares_svg():
     ["rounded", "dots"],
 )
 def test_padroes_funcionais_svg(forma):
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     resultado = renderizar_svg(
         matriz,
@@ -224,7 +224,7 @@ def test_quantidade_modulos_personalizados_svg(
     forma,
     elemento,
 ):
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     geometria = calcular_geometria(
         matriz.dimensao,
@@ -260,7 +260,7 @@ def test_quantidade_modulos_personalizados_svg(
     ["rounded", "dots"],
 )
 def test_escala_insuficiente_svg(forma):
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     with pytest.raises(ErroDimensaoQR):
         renderizar_svg(
@@ -305,7 +305,7 @@ def test_seguranca_svg_personalizado(forma):
 @pytest.mark.parametrize("interior", ["square", "rounded", "dots"])
 def test_formas_olhos_svg(exterior, interior):
     resultado = renderizar_svg(
-        gerar_matriz("example"),
+        gerar_matriz("ntizoconnect"),
         olhos=EstiloOlhos(
             forma_exterior=exterior,
             forma_interior=interior,
@@ -324,7 +324,7 @@ def test_formas_olhos_svg(exterior, interior):
 
 def test_cores_independentes_olhos_svg():
     resultado = renderizar_svg(
-        gerar_matriz("example"),
+        gerar_matriz("ntizoconnect"),
         olhos=EstiloOlhos(
             forma_exterior="rounded",
             forma_interior="dots",
@@ -351,7 +351,7 @@ def test_cores_independentes_olhos_svg():
 
 def test_olhos_transparentes_svg():
     resultado = renderizar_svg(
-        gerar_matriz("example"),
+        gerar_matriz("ntizoconnect"),
         cor_fundo=TRANSPARENTE,
         olhos=EstiloOlhos(
             forma_exterior="rounded",
@@ -373,7 +373,7 @@ def test_olhos_transparentes_svg():
 
 
 def test_caminhos_olhos_svg_deterministicos():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     estilo = EstiloOlhos(
         forma_exterior="rounded",

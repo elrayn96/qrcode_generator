@@ -30,19 +30,19 @@ def test_dimensao_corresponde_versao():
 
 
 def test_matriz_quadrada():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     assert all(len(linha) == matriz.dimensao for linha in matriz.modulos)
 
 
 def test_matriz_binaria():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     assert all(modulo in (0, 1) for linha in matriz.modulos for modulo in linha)
 
 
 def test_contagem_modulos():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     assert matriz.total_modulos == matriz.dimensao**2
     assert matriz.modulos_escuros > 0
@@ -53,7 +53,7 @@ def test_contagem_modulos():
 
 @pytest.mark.parametrize("nivel", ["L", "M", "Q", "H"])
 def test_correcao_erros_respeitada(nivel):
-    matriz = gerar_matriz("example", nivel)
+    matriz = gerar_matriz("ntizoconnect", nivel)
 
     assert matriz.correcao_erros == nivel
 
@@ -74,7 +74,7 @@ def test_micro_qr_nao_utilizado():
 
 
 def test_mascara_valida():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     assert 0 <= matriz.mascara <= 7
 
@@ -132,25 +132,25 @@ def test_unicode_invalido():
 
 def test_correcao_erro_invalida():
     with pytest.raises(ErroDadosInvalidos):
-        gerar_matriz("example", "X")
+        gerar_matriz("ntizoconnect", "X")
 
 
 def test_matriz_imutavel():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     with pytest.raises(FrozenInstanceError):
         matriz.versao = 40
 
 
 def test_modulos_imutaveis():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     with pytest.raises(TypeError):
         matriz.modulos[0][0] = 0
 
 
 def test_tipos_modulos_dimensao():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     assert len(matriz.tipos_modulos) == matriz.dimensao
 
@@ -158,7 +158,7 @@ def test_tipos_modulos_dimensao():
 
 
 def test_identificacao_padroes_localizacao():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     assert matriz.tipo_modulo(0, 0) == (TYPE_FINDER_PATTERN_DARK)
 
@@ -166,7 +166,7 @@ def test_identificacao_padroes_localizacao():
 
 
 def test_identificacao_modulos_dados():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     tipos = {modulo for linha in matriz.tipos_modulos for modulo in linha}
 
@@ -175,7 +175,7 @@ def test_identificacao_modulos_dados():
 
 
 def test_consultar_modulo_escuro():
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     assert matriz.modulo_escuro(0, 0) is True
     assert matriz.modulo_escuro(1, 1) is False
@@ -191,7 +191,7 @@ def test_consultar_modulo_escuro():
     ],
 )
 def test_coordenadas_invalidas(linha, coluna):
-    matriz = gerar_matriz("example")
+    matriz = gerar_matriz("ntizoconnect")
 
     with pytest.raises(IndexError):
         matriz.modulo_escuro(linha, coluna)
