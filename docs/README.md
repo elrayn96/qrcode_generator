@@ -1,18 +1,37 @@
 # Gen QR - GQR
 
-Baseline documental v0.1, proposta para revisão.
+Documentação técnica e funcional do projecto.
 
-- [requisitos.md](requisitos.md)
-- [arquitectura.md](arquitectura.md)
-- [modelo-de-dados.md](modelo-de-dados.md)
-- [seguranca.md](seguranca.md)
-- [concorrencia.md](concorrencia.md)
-- [api/README.md](api/README.md)
-- [ui-ux/directrizes.md](ui-ux/directrizes.md)
-- [sistema-de-design/README.md](sistema-de-design/README.md)
-- [testes.md](testes.md)
-- [ci-cd.md](ci-cd.md)
-- [gestao-de-configuracao.md](gestao-de-configuracao.md)
-- [roadmap.md](roadmap.md)
-- [observabilidade.md](observabilidade.md)
-- [adr/README.md](adr/README.md)
+## Documentação geral
+
+- [Requisitos](requisitos.md)
+- [Arquitectura](arquitectura.md)
+- [Modelo de dados](modelo-de-dados.md)
+- [Segurança](seguranca.md)
+- [Concorrência](concorrencia.md)
+- [Testes](testes.md)
+- [CI/CD](ci-cd.md)
+- [Gestão de configuração](gestao-de-configuracao.md)
+- [Observabilidade](observabilidade.md)
+- [Roadmap](roadmap.md)
+
+## API
+
+- [Documentação da API](api/README.md)
+- [Contratos OpenAPI](../packages/api-contracts/README.md)
+
+## Motor QR
+
+- [README do serviço](../services/qr-engine/README.md)
+- [Renderização](motor-qr/renderizacao.md)
+- [Desempenho](motor-qr/desempenho.md)
+- [Validação](motor-qr/validacao.md)
+
+## Interface e experiência do utilizador
+
+- [Directrizes UI/UX](ui-ux/directrizes.md)
+- [Sistema de design](sistema-de-design/README.md)
+
+## Decisões de arquitectura
+
+- [ADR](adr/README.md)
