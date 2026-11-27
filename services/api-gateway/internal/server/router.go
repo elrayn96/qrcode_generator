@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"github.com/elrayn96/qrcode_generator/services/api-gateway/internal/config"
 	"github.com/elrayn96/qrcode_generator/services/api-gateway/internal/handlers"
 	"github.com/elrayn96/qrcode_generator/services/api-gateway/internal/qrengine"
@@ -121,6 +122,11 @@ func (g *gateway) render(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		var tooLarge *http.MaxBytesError
+		if !errors.As(err, &tooLarge) {
+			problem(w, 400, "invalid_body", id)
+			return
+		}
 		problem(w, 413, "body_too_large", id)
 		return
 	}
