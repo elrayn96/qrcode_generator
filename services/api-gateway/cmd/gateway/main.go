@@ -3,27 +3,27 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
+	"github.com/elrayn96/qrcode_generator/services/api-gateway/internal/config"
 	"github.com/elrayn96/qrcode_generator/services/api-gateway/internal/server"
 )
 
 func main() {
-	host := os.Getenv("API_HOST")
-	if host == "" {
-		host = "127.0.0.1"
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Configuração inválida: %v", err)
 	}
 
-	port := os.Getenv("API_PORT")
-	if port == "" {
-		port = "8080"
-	}
+	log.Printf(
+		"GQR API Gateway iniciado em %s (ambiente: %s)",
+		cfg.Address(),
+		cfg.Environment,
+	)
 
-	address := host + ":" + port
-
-	log.Printf("GQR API Gateway iniciado em %s", address)
-
-	if err := http.ListenAndServe(address, server.NewRouter()); err != nil {
+	if err := http.ListenAndServe(
+		cfg.Address(),
+		server.NewRouter(),
+	); err != nil {
 		log.Fatal(err)
 	}
 }
