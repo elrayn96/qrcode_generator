@@ -12,7 +12,10 @@ def validar_estilo_suportado(
 ) -> None:
     estilo = pedido.style
 
-    if estilo.logo is not None or estilo.frame is not None:
+    if estilo.frame is not None:
+        raise ErroDadosInvalidos()
+
+    if estilo.logo is not None and pedido.options.errorCorrection != "H":
         raise ErroDadosInvalidos()
 
 
@@ -35,4 +38,5 @@ def renderizar(
         tamanho=pedido.output.size,
         margem=pedido.output.margin,
         estilo=estilo,
+        logotipo=pedido.style.logo,
     )
