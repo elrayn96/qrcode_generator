@@ -19,6 +19,7 @@ def test_motor_ainda_nao_preparado():
     app = criar_aplicacao()
 
     with TestClient(app) as client:
+        app.state.pronto = False
         resposta = client.get("/readyz")
 
     assert resposta.status_code == 503

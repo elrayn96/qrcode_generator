@@ -11,8 +11,7 @@ from src.core.config import carregar_configuracao
 
 @asynccontextmanager
 async def ciclo_vida(app: FastAPI) -> AsyncIterator[None]:
-    app.state.pronto = False
-
+    app.state.pronto = True
     try:
         yield
     finally:
@@ -22,7 +21,6 @@ async def ciclo_vida(app: FastAPI) -> AsyncIterator[None]:
 def criar_aplicacao() -> FastAPI:
     config = carregar_configuracao()
     desenvolvimento = config.ambiente != "production"
-
     aplicacao = FastAPI(
         title="GQR API interna",
         version="0.1.0",
@@ -32,21 +30,17 @@ def criar_aplicacao() -> FastAPI:
         redoc_url="/redoc" if desenvolvimento else None,
         openapi_url="/openapi.json" if desenvolvimento else None,
     )
-
     aplicacao.state.config = config
     aplicacao.state.pronto = False
     aplicacao.include_router(router)
     registar_tratamento_erros(aplicacao)
-
     return aplicacao
 
 
 app = criar_aplicacao()
 
-
 if __name__ == "__main__":
     config = carregar_configuracao()
-
     uvicorn.run(
         "src.main:app",
         host=config.host,
