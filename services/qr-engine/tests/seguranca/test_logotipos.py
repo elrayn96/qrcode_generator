@@ -96,3 +96,18 @@ def test_rejeita_png_animado():
         dados = memoria.getvalue()
     with pytest.raises(ErroDadosInvalidos):
         carregar_logotipo(criar_logo(dados))
+
+
+def test_rejeita_configuracao_insegura(monkeypatch):
+    from PIL import ImageFile
+
+    monkeypatch.setattr(
+        ImageFile,
+        "LOAD_TRUNCATED_IMAGES",
+        True,
+    )
+
+    logo = criar_logo(criar_imagem())
+
+    with pytest.raises(ErroDadosInvalidos):
+        carregar_logotipo(logo)
