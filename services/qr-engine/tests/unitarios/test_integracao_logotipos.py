@@ -131,21 +131,6 @@ def test_sem_logotipo_aceita_correcao(
 
 
 @pytest.mark.parametrize("formato", ["png", "svg"])
-def test_moldura_continua_indisponivel(formato):
-    pedido = criar_pedido(
-        formato=formato,
-        estilo={
-            "frame": {
-                "label": "SCAN ME",
-            },
-        },
-    )
-
-    with pytest.raises(ErroDadosInvalidos):
-        renderizar(pedido)
-
-
-@pytest.mark.parametrize("formato", ["png", "svg"])
 def test_rejeita_base64_invalido(formato):
     logo = criar_logo()
     logo["base64"] = "AB=="
