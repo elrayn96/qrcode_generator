@@ -6,7 +6,7 @@
 
 > Geração e personalização gratuita de códigos QR estáticos, sem redireccionamentos proprietários.
 
-**Estado:** pré-MVP - arquitectura definida; documentação v0.1 publicada para revisão. A implementação, os serviços executáveis e os contratos OpenAPI completos ainda estão pendentes.
+**Estado:** pré-MVP — motor QR e Gateway executáveis localmente; contratos OpenAPI definidos; integração Firebase em desenvolvimento. A fase 5 ainda não está encerrada.
 
 ## Visão e objectivos
 
@@ -16,8 +16,8 @@ Os códigos incorporam directamente o conteúdo original, sem marcas de água ne
 
 ## Funcionalidades previstas (MVP)
 
-- [ ] URL, texto, Wi-Fi, contactos vCard, email, SMS, telefone e localização.
-- [ ] Personalização de módulos, olhos, fundo, cores sólidas, gradientes e logótipos.
+- [x] URL, texto, Wi-Fi, contactos vCard, email, SMS, telefone e localização.
+- [x] Personalização de módulos, olhos, fundo, cores sólidas, gradientes e logótipos.
 - [ ] Selector visual de cores por arrasto, HEX, RGB e HSV, com pré-visualização.
 - [ ] Modelos reutilizáveis, margens e preservação dos padrões funcionais do QR.
 - [ ] Exportação PNG e SVG e validação por descodificação independente.
@@ -60,7 +60,7 @@ O descodificador independente de QR ainda será seleccionado. Docker e alojament
 
 ## API e segurança
 
-A API pública terá versão inicial `/v1`. Os contratos e exemplos executáveis serão definidos na fase de especificação OpenAPI; consultar [API](docs/api/README.md). Não existe ainda um endpoint público disponível.
+A API pública utiliza a versão `/v1`. Os contratos OpenAPI público e interno estão definidos; consultar [API](docs/api/README.md). Não existe ainda um endpoint público disponível.
 
 | Cliente | Modelo de acesso previsto |
 |---|---|
@@ -76,7 +76,7 @@ HTTPS será obrigatório fora do ambiente local isolado. Serão aplicados limite
 
 ## Concorrência e gestão de recursos
 
-Go gere pedidos simultâneos com goroutines, channels, worker pool limitado, cancelamento por context e encerramento controlado. A fila limitada evita saturação do motor Python. A cache em memória terá capacidade limitada, TTL e invalidação na alteração ou revogação de credenciais. O algoritmo Token Bucket limita frequência; quotas diárias persistentes no Firestore serão reservadas atomicamente.
+Go gere pedidos simultâneos com goroutines, channels, worker pool limitado, cancelamento por context e encerramento controlado. A fila limitada evita saturação do motor Python. A cache em memória terá capacidade limitada, TTL e invalidação na alteração ou revogação de credenciais. Actualmente existe um limite de 60 pedidos por minuto por IP, em janela fixa. Token Bucket e quotas diárias persistentes continuam pendentes. A cache limitada existe como componente independente, sem integração na renderização.
 
 Parâmetros iniciais propostos: 2 workers, fila de 8 pedidos, timeout total de 15 segundos e TTL de 60 segundos. São valores configuráveis, sujeitos a testes de carga. A arquitectura inicial assume uma instância do gateway; fila cheia retorna 503 e limites de utilização retornam 429.
 
@@ -142,7 +142,7 @@ Estrutura-alvo, não inventário dos directórios existentes. Será implementada
 
 Pré-requisitos previstos: Git, Python, Go, Android SDK/Android Studio e browser moderno. Firebase remoto exige Internet; serão utilizados adaptadores simulados para testes locais. As versões mínimas, dependências fixadas e instruções de execução serão documentadas no bootstrap dos respectivos componentes.
 
-Privilegiar ambientes virtuais, cache pip/Go/Gradle, pacotes locais e builds offline após a preparação inicial. Não instalar dependências antecipadamente sem necessidade. Credenciais privadas ficam fora do Git. Actualmente não existe uma implementação executável nem instruções de arranque validadas.
+Privilegiar ambientes virtuais, cache pip/Go/Gradle, pacotes locais e builds offline após a preparação inicial. Não instalar dependências antecipadamente sem necessidade. Credenciais privadas ficam fora do Git. Os dois serviços já foram executados localmente em Windows.
 
 ## Qualidade e integração contínua
 
@@ -166,11 +166,86 @@ Exemplo: `feat: implementar geração de códigos QR estáticos`. Versionamento 
 
 - [x] Planeamento arquitectural e inicialização do repositório.
 - [x] Documentação inicial v0.1 (pendente de revisão).
-- [ ] Bootstrap do monorepo e contratos OpenAPI, em paralelo.
+- [x] Bootstrap do monorepo e contratos OpenAPI.
 - [ ] Motor Python, gateway Go, Firebase e sistema de design, conforme dependências.
 - [ ] Integração, concorrência, segurança, cache e quotas.
 - [ ] Website, portal e Android; desenvolvimento com mocks quando aplicável.
 - [ ] Testes integrados, carga, demonstração local e release.
+
+## Implementação actual e validação
+
+### Motor QR Python
+
+O motor privado suporta oito tipos de conteúdo, PNG e SVG, personalização de módulos e olhos, cores, gradientes, logótipos e molduras. A validação de logótipos limita o conteúdo descodificado a 512 KiB, dimensões a 2048 × 2048 e rejeita animações. A inclusão de logótipo exige correcção de erros H. A moldura pode aumentar as dimensões finais da imagem.
+
+O endpoint `POST /internal/v1/render` recebe o pedido canónico; `/healthz` e `/readyz` permitem verificar o serviço. O motor escuta localmente em `127.0.0.1:8001`.
+
+### Gateway Go
+
+O Gateway valida e canonicaliza os pedidos públicos, encaminha-os ao motor, devolve PNG/SVG binário, identifica pedidos e utiliza erros problem+json. A pré-visualização está limitada a 512 px. O limite de corpo é 1 MiB e a resposta interna está limitada a 32 MiB. A fila e o número de workers são limitados; o encerramento é controlado.
+
+| Endpoint | Estado |
+|---|---|
+| GET /healthz | Implementado |
+| GET /readyz | Verifica o motor |
+| POST /v1/qr/generate | Implementado |
+| POST /v1/qr/preview | Implementado |
+| GET /v1/templates | Lista vazia provisória |
+| Projectos, aplicações e chaves | Implementação administrativa inicial; validação Firebase pendente |
+| Utilização e quotas | Pendente |
+
+### Firebase
+
+SDKs instalados: Firebase Admin v4.23.0, Firestore v1.29.2 e Google API v0.311.0. O teste remoto de consulta passou no ambiente Windows. O adaptador verifica ID tokens e revogação. O novo módulo administrativo separa os recursos por proprietário e guarda apenas hashes das chaves, mas ainda não autoriza pedidos de geração por chave. Restrições de aplicação e quotas continuam pendentes. A persistência proposta utiliza um documento por proprietário, com limites de recursos; não é ainda o modelo definitivo de produção.
+
+### Arranque local (PowerShell)
+
+Motor, num terminal:
+
+```powershell
+Set-Location services/qr-engine
+.\.venv\Scripts\Activate.ps1
+python -m src.main
+```
+
+Gateway, noutro terminal a partir da raiz:
+
+```powershell
+Set-Location services/api-gateway
+go run ./cmd/gateway
+```
+
+Para activar Firebase, definir `FIREBASE_PROJECT_ID` e `GOOGLE_APPLICATION_CREDENTIALS` com o ID do projecto e o caminho local da conta de serviço. Nunca colocar o JSON de credenciais no repositório.
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8080/healthz
+Invoke-RestMethod http://127.0.0.1:8080/readyz
+$body = @{type='text';data=@{text='Gen QR'};output=@{format='png';size=512;margin=4}} | ConvertTo-Json -Depth 10
+Invoke-WebRequest http://127.0.0.1:8080/v1/qr/generate -Method Post -ContentType 'application/json' -Body $body -OutFile qr.png
+```
+
+### Configuração Gateway
+
+| Variável | Valor inicial |
+|---|---|
+| API_HOST | 127.0.0.1 |
+| API_PORT | 8080 |
+| QR_ENGINE_URL | http://127.0.0.1:8001 |
+| APP_ENV | development |
+| LOG_LEVEL | INFO |
+| WORKER_COUNT | 2 |
+| QUEUE_CAPACITY | 8 |
+| REQUEST_TIMEOUT_SECONDS | 15 |
+| CACHE_TTL_SECONDS | 60 |
+
+### Resultados históricos de qualidade
+
+- Motor: 1.026 testes aprovados na implementação da fase 4; validações formais adicionais pendentes.
+- Optimização anterior: cobertura global 97,45%, 32 configurações byte-idênticas e redução de 79,11% no benchmark PNG completo 2048.
+- Gateway: cobertura anterior de configuração e handlers 100%, cache e servidor 90,6%, cliente do motor 93,8%.
+- Benchmark Gateway: média de 18,20 µs/op em cinco execuções Windows; não mede geração integral.
+- Firebase: teste remoto aprovado em 4,76 s; cobertura unitária anterior 10%.
+- Administração inicial: testes com armazenamento simulado, cobertura 71,7%; SDK real e router principal ainda por compilar nesta revisão.
 
 ## Autor e licença
 
