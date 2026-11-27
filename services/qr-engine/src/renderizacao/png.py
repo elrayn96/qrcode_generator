@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from io import BytesIO
 
 from PIL import Image, ImageDraw
@@ -24,6 +25,11 @@ from src.renderizacao.gradientes import (
     GeometriaGradiente,
     Gradiente,
 )
+from src.renderizacao.logotipos import calcular_geometria_logotipo
+from src.renderizacao.logotipos_png import (
+    guardar_fundo_logotipo,
+    renderizar_logotipo_png,
+)
 from src.renderizacao.modulos import (
     ModuloVisual,
     iterar_modulos_escuros,
@@ -31,7 +37,8 @@ from src.renderizacao.modulos import (
 from src.renderizacao.olhos import EstiloOlhos
 from src.renderizacao.olhos_png import renderizar_olhos_png
 from src.renderizacao.resultado import ResultadoRenderizacao
-from src.schemas.personalizacao import Forma
+from src.schemas.personalizacao import Forma, Logotipo
+from src.seguranca.logotipos import carregar_logotipo
 
 
 def desenhar_modulo(
@@ -165,6 +172,7 @@ def renderizar_png(
     olhos: EstiloOlhos | None = None,
     *,
     estilo: EstiloRenderizacao | None = None,
+    logotipo: Logotipo | None = None,
 ) -> ResultadoRenderizacao:
     estilo = estilo or criar_estilo_convencional(
         cor_modulos,
@@ -184,11 +192,39 @@ def renderizar_png(
         estilo,
     )
 
-    with renderizar_fundo_png(
-        largura=tamanho,
-        altura=tamanho,
-        estilo=estilo.fundo,
-    ) as imagem:
+    with ExitStack() as recursos:
+        imagem_logotipo = None
+        geometria_logotipo = None
+        fundo_logotipo = None
+
+        if logotipo is not None:
+            imagem_logotipo = recursos.enter_context(
+                carregar_logotipo(logotipo),
+            )
+
+            geometria_logotipo = calcular_geometria_logotipo(
+                matriz,
+                geometria,
+                logotipo,
+                imagem_logotipo.size,
+            )
+
+        imagem = recursos.enter_context(
+            renderizar_fundo_png(
+                largura=tamanho,
+                altura=tamanho,
+                estilo=estilo.fundo,
+            ),
+        )
+
+        if geometria_logotipo is not None:
+            fundo_logotipo = recursos.enter_context(
+                guardar_fundo_logotipo(
+                    imagem,
+                    geometria_logotipo,
+                ),
+            )
+
         desenhar_modulos_png(
             imagem,
             matriz,
@@ -206,6 +242,18 @@ def renderizar_png(
                 geometria=geometria,
                 estilo=estilo.olhos,
                 preenchimentos=estilo.preenchimentos_olhos,
+            )
+
+        if (
+            imagem_logotipo is not None
+            and geometria_logotipo is not None
+            and fundo_logotipo is not None
+        ):
+            renderizar_logotipo_png(
+                imagem=imagem,
+                logotipo=imagem_logotipo,
+                fundo=fundo_logotipo,
+                geometria=geometria_logotipo,
             )
 
         with BytesIO() as memoria:
