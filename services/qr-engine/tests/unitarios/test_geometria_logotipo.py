@@ -74,5 +74,3 @@ def test_matriz_incompativel(contexto):
     # print("len primeira linha:", len(matriz.modulos[0]))
     with pytest.raises(ErroDadosInvalidos):
         calcular_geometria_logotipo(matriz, calcular_geometria(24, 512), logo(), (100, 100))
-
-
