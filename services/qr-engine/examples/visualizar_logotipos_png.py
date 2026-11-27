@@ -71,7 +71,7 @@ def criar_logotipo(
 
 
 def main():
-    matriz = gerar_matriz("ntizoconnect", "H")
+    matriz = gerar_matriz("ntizoconnect.com", "H")
 
     destino = Path("demonstracao-logotipos-png")
     destino.mkdir(exist_ok=True)
