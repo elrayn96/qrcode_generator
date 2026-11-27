@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from xml.etree.ElementTree import Element, SubElement, tostring
 
 from src.motor.matriz import MatrizQR
@@ -18,6 +19,11 @@ from src.renderizacao.gradientes_svg import (
     RegistoGradientesSVG,
     formatar_numero,
 )
+from src.renderizacao.logotipos import calcular_geometria_logotipo
+from src.renderizacao.logotipos_svg import (
+    criar_recorte_logotipo_svg,
+    renderizar_logotipo_svg,
+)
 from src.renderizacao.modulos import (
     ModuloVisual,
     iterar_modulos_escuros,
@@ -28,7 +34,8 @@ from src.renderizacao.olhos import (
 )
 from src.renderizacao.olhos_svg import renderizar_olhos_svg
 from src.renderizacao.resultado import ResultadoRenderizacao
-from src.schemas.personalizacao import Forma
+from src.schemas.personalizacao import Forma, Logotipo
+from src.seguranca.logotipos import carregar_logotipo
 
 SVG_NS = "http://www.w3.org/2000/svg"
 
@@ -244,6 +251,7 @@ def renderizar_svg(
     olhos: EstiloOlhos | None = None,
     *,
     estilo: EstiloRenderizacao | None = None,
+    logotipo: Logotipo | None = None,
 ) -> ResultadoRenderizacao:
     chamada_convencional = estilo is None
 
@@ -265,52 +273,85 @@ def renderizar_svg(
         estilo,
     )
 
-    raiz = Element(
-        "svg",
-        {
-            "xmlns": SVG_NS,
-            "width": str(tamanho),
-            "height": str(tamanho),
-            "viewBox": f"0 0 {tamanho} {tamanho}",
-        },
-    )
+    with ExitStack() as recursos:
+        imagem_logotipo = None
+        geometria_logotipo = None
 
-    registo = RegistoGradientesSVG(raiz)
+        if logotipo is not None:
+            imagem_logotipo = recursos.enter_context(
+                carregar_logotipo(logotipo),
+            )
 
-    renderizar_fundo_svg(
-        raiz=raiz,
-        largura=tamanho,
-        altura=tamanho,
-        estilo=estilo.fundo,
-        registo=registo,
-    )
+            geometria_logotipo = calcular_geometria_logotipo(
+                matriz,
+                geometria,
+                logotipo,
+                imagem_logotipo.size,
+            )
 
-    # Preserva a estrutura das chamadas antigas.
-    excluir_olhos = olhos is not None if chamada_convencional else estilo.requer_olhos_independentes
+        raiz = Element(
+            "svg",
+            {
+                "xmlns": SVG_NS,
+                "width": str(tamanho),
+                "height": str(tamanho),
+                "viewBox": f"0 0 {tamanho} {tamanho}",
+            },
+        )
 
-    desenhar_modulos_svg(
-        raiz=raiz,
-        matriz=matriz,
-        geometria=geometria,
-        estilo=estilo,
-        registo=registo,
-        excluir_olhos=excluir_olhos,
-    )
+        registo = RegistoGradientesSVG(raiz)
 
-    if excluir_olhos and estilo.olhos is not None and estilo.preenchimentos_olhos is not None:
-        renderizar_olhos_svg(
+        renderizar_fundo_svg(
             raiz=raiz,
-            geometria=geometria,
-            estilo=estilo.olhos,
-            preenchimentos=estilo.preenchimentos_olhos,
+            largura=tamanho,
+            altura=tamanho,
+            estilo=estilo.fundo,
             registo=registo,
         )
 
-    dados = tostring(
-        raiz,
-        encoding="utf-8",
-        xml_declaration=True,
-    )
+        destino_modulos = raiz
+
+        if geometria_logotipo is not None:
+            destino_modulos = criar_recorte_logotipo_svg(
+                raiz,
+                geometria_logotipo,
+                tamanho,
+            )
+
+        excluir_olhos = (
+            olhos is not None if chamada_convencional else estilo.requer_olhos_independentes
+        )
+
+        desenhar_modulos_svg(
+            raiz=destino_modulos,
+            matriz=matriz,
+            geometria=geometria,
+            estilo=estilo,
+            registo=registo,
+            excluir_olhos=excluir_olhos,
+        )
+
+        if excluir_olhos and estilo.olhos is not None and estilo.preenchimentos_olhos is not None:
+            renderizar_olhos_svg(
+                raiz=destino_modulos,
+                geometria=geometria,
+                estilo=estilo.olhos,
+                preenchimentos=estilo.preenchimentos_olhos,
+                registo=registo,
+            )
+
+        if imagem_logotipo is not None and geometria_logotipo is not None:
+            renderizar_logotipo_svg(
+                raiz,
+                imagem_logotipo,
+                geometria_logotipo,
+            )
+
+        dados = tostring(
+            raiz,
+            encoding="utf-8",
+            xml_declaration=True,
+        )
 
     return ResultadoRenderizacao(
         dados=dados,
